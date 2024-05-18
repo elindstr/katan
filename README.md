@@ -1,5 +1,1 @@
-# iQuest
-
-## Description
-
-## Screenshots
+# Katan

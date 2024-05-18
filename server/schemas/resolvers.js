@@ -27,14 +27,18 @@ const resolvers = {
     },
     login: async (parent, { email, password }) => {
       const user = await User.findOne({ email });
+      // console.log('login attempt:', email)
       if (!user) {
+        console.log("login error: no user found with that email", email)
         throw AuthenticationError;
       }
       const correctPw = await user.isCorrectPassword(password);
       if (!correctPw) {
+        console.log("login error: incorrect password,", email)
         throw AuthenticationError;
       }
       const token = signToken(user);
+      console.log("new sign in:", email)
 
       return { token, user };
     }
