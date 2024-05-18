@@ -7,6 +7,10 @@ import { configureStore } from '@reduxjs/toolkit';
 import App from './App';
 import reducers from './reducers';
 
+// configure socket.io client
+import { io } from 'socket.io-client';
+const socket = io();
+
 // Configure GraphQL HTTP Link
 const httpLink = createHttpLink({
   uri: '/graphql',
