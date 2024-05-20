@@ -3,30 +3,24 @@ const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@apollo/server/express4');
 const path = require('path');
 const { createServer } = require('http');
-const { Server } = require('socket.io');
 const { authMiddleware } = require('./utils/auth');
-const PORT = process.env.PORT || 3001;
-const app = express();
-
-// Socket.IO connection event
-const httpServer = createServer(app);
-const io = new Server(httpServer);
-io.on('connection', (socket) => {
-  console.log('A user connected');
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
-  });
-  // Add other socket event listeners here
-});
-
-
-// Create a new instance of an Apollo server with the GraphQL schema
+const initializeSocket = require('./utils/ioConnections');
 const { typeDefs, resolvers } = require('./schemas');
 const db = require('./config/connection');
+
+const PORT = process.env.PORT || 3001;
+const app = express();
+const httpServer = createServer(app);
+
+// Initialize Socket.IO
+initializeSocket(httpServer);
+
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  context: ({ req }) => authMiddleware(req),
 });
+
 const startApolloServer = async () => {
   await server.start();
 
@@ -36,9 +30,7 @@ const startApolloServer = async () => {
   // Serve static assets
   app.use('/images', express.static(path.join(__dirname, '../client/images')));
 
-  app.use('/graphql', expressMiddleware(server, {
-    context: authMiddleware
-  }));
+  app.use('/graphql', expressMiddleware(server));
 
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../client/dist')));
@@ -49,7 +41,7 @@ const startApolloServer = async () => {
   }
 
   db.once('open', () => {
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       console.log(`API server running on port ${PORT}!`);
       console.log(`Use GraphQL at http://localhost:${PORT}/graphql`);
     });

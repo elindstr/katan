@@ -1,21 +1,23 @@
+//login.jsx
 import React, { useState } from 'react';
-import { useMutation } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
 import { LOGIN, ADD_USER } from '../utils/mutations';
+import { QUERY_USERS } from '../utils/queries';
 import Auth from '../utils/auth';
 import './Login.css';
 
-const Landing = () => {
+const Login = () => {
   const [isSignup, setIsSignup] = useState(false);
   const [formState, setFormState] = useState({
-    email: '',
+    username: '',
     password: '',
     firstName: '',
     lastName: ''
   });
 
   const navigate = useNavigate();
-
+  const { loading, data } = useQuery(QUERY_USERS);
   const [login, { error: loginError }] = useMutation(LOGIN);
   const [addUser, { error: signupError }] = useMutation(ADD_USER);
 
@@ -28,9 +30,14 @@ const Landing = () => {
     e.preventDefault();
     try {
       if (isSignup) {
+        // Check if username is already taken
+        if (data && data.users.some(user => user.username === formState.username)) {
+          alert('Username is already taken. Please choose another one.');
+          return;
+        }
         const mutationResponse = await addUser({
           variables: {
-            email: formState.email,
+            username: formState.username,
             password: formState.password,
             firstName: formState.firstName,
             lastName: formState.lastName
@@ -40,10 +47,11 @@ const Landing = () => {
         Auth.login(token);
       } else {
         const mutationResponse = await login({
-          variables: { email: formState.email, password: formState.password }
+          variables: { username: formState.username, password: formState.password }
         });
         const token = mutationResponse.data.login.token;
         Auth.login(token);
+
       }
       console.log("redirecting to dashboard")
       navigate('/'); // Redirect to dashboard
@@ -78,10 +86,10 @@ const Landing = () => {
             </>
           )}
           <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formState.email}
+            type="text"
+            name="username"
+            placeholder="Username"
+            value={formState.username}
             onChange={handleInputChange}
             required
           />
@@ -108,4 +116,4 @@ const Landing = () => {
   );
 };
 
-export default Landing
+export default Login;

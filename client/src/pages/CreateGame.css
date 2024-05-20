@@ -1,0 +1,128 @@
+#root, body {
+  width: 100%
+}
+.create-game-container {
+  background-color: #1e1e1e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 90%;
+  margin: auto;
+  padding: 20px;
+  box-sizing: border-box;
+  color: white;
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+.player-count {
+  margin-bottom: 20px;
+}
+
+.main-content {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.seats-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 50%;
+}
+
+.seat {
+  width: 100px;
+  height: 100px;
+  margin: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #6200ea;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.seat:hover {
+  background-color: #3700b3;
+}
+
+.right-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 50%;
+}
+
+.sidebar {
+  width: 100%;
+}
+
+.sidebar h2, .chat-container h2 {
+  margin-bottom: 10px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px 0;
+}
+
+.sidebar ul li {
+  margin-bottom: 5px;
+}
+
+.chat-container {
+  width: 100%;
+}
+
+.chat-feed {
+  border: 1px solid #ccc;
+  padding: 10px;
+  height: 200px;
+  overflow-y: scroll;
+  margin-bottom: 10px;
+}
+
+.chat-message {
+  margin-bottom: 5px;
+}
+
+.bottom-button {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+button {
+  padding: 10px 20px;
+  margin: 5px;
+  border: none;
+  border-radius: 5px;
+  background-color: #6200ea;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #3700b3;
+}
+
+.start-game-button {
+  background-color: #ff9800;
+}
+
+.start-game-button:hover {
+  background-color: #e65100;
+}
+
+.create-game-container input[type="text"] {
+  padding: 10px;
+  margin-bottom: 10px;
+  width: 100%;
+}

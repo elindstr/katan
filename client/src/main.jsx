@@ -1,15 +1,12 @@
+//main.jsx
 import ReactDOM from 'react-dom/client';
-import './index.css';
 import { Provider } from 'react-redux';
 import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { configureStore } from '@reduxjs/toolkit';
 import App from './App';
 import reducers from './reducers';
-
-// configure socket.io client
-import { io } from 'socket.io-client';
-const socket = io();
+import './index.css'
 
 // Configure GraphQL HTTP Link
 const httpLink = createHttpLink({
