@@ -1,7 +1,7 @@
 const { decodeToken } = require('./auth');
 
 const socketAuth = (socket, next) => {
-  console.log('Handshake auth:', socket.handshake.auth);
+  //console.log('Handshake auth:', socket.handshake.auth);
   const token = socket.handshake.auth.token;
 
   if (!token) {
@@ -18,7 +18,7 @@ const socketAuth = (socket, next) => {
 
     socket.userId = decoded.data._id;
     socket.username = decoded.data.username;
-    console.log('Username derived from token:', socket.username);
+    //console.log('Username derived from token:', socket.username);
     next();
     
   } catch (err) {
