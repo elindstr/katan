@@ -1,31 +1,43 @@
-import React, { useState } from 'react';
+// Chat.jsx
+function Chat({ users, messages, handleSendMessage, handleKeyPress, setMessage, message }) {
 
-const Chat = ({ messages, onSendMessage }) => {
-  const [message, setMessage] = useState('');
-
-  const handleSendMessage = () => {
-    onSendMessage(message);
+  const sendMessage = () => {
+    handleSendMessage(message);
     setMessage('');
   };
 
   return (
-    <div className="chat-container">
-      <h2>Chat</h2>
-      <div className="chat-feed">
-        {messages.map((msg, index) => (
-          <div key={index} className="chat-message">
-            <strong>{msg.author}</strong>: {msg.body}
-          </div>
-        ))}
+    <div className="chat">
+      <div className="chat-users">
+        <h3>Current Users</h3>
+        <ul>
+          {users.map((user, index) => (
+            <li key={index}>{user}</li>
+          ))}
+        </ul>
       </div>
-      <input
-        type="text"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-      />
-      <button onClick={handleSendMessage}>Send</button>
+      <div className="chat-messages">
+        <h3>Chat Messages</h3>
+        <div className="messages-container">
+          {messages.map((msg, index) => (
+            <div key={index}>
+              <strong>{msg.author}</strong>: {msg.body}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="chat-input">
+        <input 
+          type="text" 
+          value={message} 
+          onChange={(e) => setMessage(e.target.value)} 
+          placeholder="Enter message"
+          onKeyPress={handleKeyPress}
+        />
+        <button onClick={sendMessage}>Send</button>
+      </div>
     </div>
   );
-};
+}
 
 export default Chat;

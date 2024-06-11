@@ -4,9 +4,11 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import UpdateProfile from './pages/UpdateProfile';
 import Auth from './utils/auth';
+import "./App.css"
 
 const CreateGame = React.lazy(() => import('./pages/CreateGame'));
 const JoinGame = React.lazy(() => import('./pages/JoinGame'));
+const GameBoard = React.lazy(() => import('./components/GameBoard')); // Assuming GameBoard is in the pages directory
 
 const PrivateRoute = ({ element }) => {
   return Auth.loggedIn() ? element : <Navigate to="/login" />;
@@ -30,6 +32,7 @@ function App() {
           <Route path="/update-profile" element={<PrivateRoute element={<UpdateProfile />} />} />
           <Route path="/create-game" element={<PrivateRoute element={<CreateGame />} />} />
           <Route path="/join-game" element={<PrivateRoute element={<JoinGame />} />} />
+          <Route path="/game-board" element={<PrivateRoute element={<GameBoard />} />} />
           <Route path="*" element={<NotFoundRedirect />} />
         </Routes>
       </Suspense>

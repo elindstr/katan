@@ -6,7 +6,7 @@ import { setContext } from '@apollo/client/link/context';
 import { configureStore } from '@reduxjs/toolkit';
 import App from './App';
 import reducers from './reducers';
-import './index.css'
+// import './index.css'
 
 // Configure GraphQL HTTP Link
 const httpLink = createHttpLink({

@@ -1,11 +1,10 @@
 //login.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
 import { LOGIN, ADD_USER } from '../utils/mutations';
 import { QUERY_USERS } from '../utils/queries';
 import Auth from '../utils/auth';
-import './Login.css';
 
 const Login = () => {
   const [isSignup, setIsSignup] = useState(false);

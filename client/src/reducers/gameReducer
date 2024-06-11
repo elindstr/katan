@@ -1,13 +1,6 @@
 // import { SET_TRIVIA_API_INPUTS, FETCH_TRIVIA_API_SUCCESS, FETCH_TRIVIA_API_ERROR } from '../actions/actionTypes';
 
 const initialState = {
-  apiInputs: {
-    amount: 10,
-    category: 'any',
-    difficulty: 'any',
-  },
-  triviaData: null,
-  currentQuestion: 0,
 };
 
 const gameReducer = (state = initialState, action) => {

@@ -1,0 +1,441 @@
+/* reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* main */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #121212;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+} 
+
+/* Login Page */
+.landing-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+.card {
+  background: #1e1e1e;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  color: #fff;
+  max-width: 400px;
+  width: 100%;
+}
+.card h1 {
+  color: #fff;
+  margin-bottom: 1.5rem;
+}
+
+.card form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 200px;
+  justify-content: center;
+}
+
+.card input {
+  padding: 0.75rem;
+  border: none;
+  border-radius: 4px;
+  background: #fff;
+  color: #000;
+}
+
+.card button {
+  padding: 0.75rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #6200ea;
+  color: #fff;
+  cursor: pointer;
+}
+
+.card button:hover {
+  background-color: #3700b3;
+}
+
+.toggle-button {
+  background-color: transparent;
+  color: #6200ea;
+  border: 1px solid #6200ea;
+  margin-top: 1rem;
+  cursor: pointer;
+  padding: 0.75rem;
+  border-radius: 4px;
+}
+
+.toggle-button:hover {
+  background-color: #6200ea;
+  color: #fff;
+}
+
+.error-text {
+  color: red;
+  font-size: 0.9em;
+}
+
+
+/* Dashboard Page */
+.dashboard-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.dashboard-page .card {
+  background: #1e1e1e;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  position: relative;
+}
+
+.dashboard-page .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dashboard-page .username-display {
+  font-size: 0.9em;
+  color: #555;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.dashboard-page button {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+}
+
+/* Create Game */
+
+/* Join Game */
+.join-game-container {    
+  color: #fff;
+  background-color: #121212;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.join-game-container .game-item {
+  background-color: #1e1e1e;
+  padding: 1rem;
+  margin: 0.5rem 0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+
+/* Game Board */
+/* App.css */
+
+/* CSS Reset */
+/* Main */
+.app {
+display: flex;
+justify-content: center;
+align-items: stretch;
+height: 100vh;
+background-color: #f5f5f5;
+}
+.main-column {
+width: 70vw;
+display: flex;
+flex-direction: column;
+height: 100%;
+}
+.side-column {
+width: 30vw;
+flex: 1;
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+height: 100%;
+}
+
+/* aside */
+.seats, .options, .chat {
+border: 1px solid #000;
+margin: 10px;
+padding: 10px;
+}
+.seats {
+display: flex;
+flex-direction: row;
+justify-content: space-between;
+}
+
+.chat {
+display: flex;
+flex-direction: column;
+height: 100%;
+}
+
+.chat-users {
+margin-bottom: 10px;
+}
+.chat-users ul {
+padding-left: 20px;
+}
+
+.chat-messages {
+flex-grow: 1;
+background-color: #ffffff;
+padding: 10px;
+border: 1px solid #ccc;
+overflow-y: auto;
+}
+
+.chat-messages .message {
+padding: 5px;
+margin-bottom: 5px;
+background-color: #f1f1f1;
+border-radius: 4px;
+}
+
+.chat-input {
+display: flex;
+flex-direction: column;
+padding: 10px;
+border-top: 1px solid #000;
+}
+
+.chat-input input {
+flex: 1;
+padding: 5px;
+margin-bottom: 3px;
+}
+
+.chat-input button {
+padding: 5px 10px;
+}
+
+/* Game Board */
+.board-container {
+background-color: #ddd;
+border: 1px solid #000;
+margin: 10px;
+position: relative;
+max-height: 485px;
+}
+.hex-inner {
+display: flex;
+justify-content: center;
+align-items: center;
+height: 100%;
+color: white;
+font-size: 1rem;
+}
+.port {
+background-color: #acecf1; 
+}
+.hex {
+opacity: .7;
+}
+/* .hex:hover {
+opacity: 1;
+} */
+/* .road {
+opacity: .8;
+}
+.road:hover {
+opacity: 1;
+} */
+.hover-display {
+opacity: 0;
+}
+.hover-display:hover {
+opacity: 1;
+}
+
+.dice-container button {
+margin: 2px;
+padding: 1px
+} 
+.dice-container {
+flex: 1;
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+font-size: 1rem;
+border: 1px solid #000;
+margin: 10px;
+padding: 10px;
+}
+.dice-container .dice {
+display: flex;
+flex-direction: row;
+}
+.dice-container .control-button {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+/* user-panel */
+
+/* user-panel */
+.user-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  border: 1px solid #ccc;
+  background-color: #f9f9f9;
+  margin: 10px;
+  font-size: 0.8em;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.current-message {
+  margin-bottom: 10px;
+}
+.development-cards {
+  
+}
+.development-cards, .actions {
+  align-self: center;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 5px;
+}
+.development-cards h4, .actions h4 {
+  margin: 0 0 5px 0;
+  text-align: center;
+}
+.development-cards div {
+  display: flex;
+  align-items: center;
+  margin: 2px 0;
+}
+.development-cards button {
+  margin-left: 5px;
+  font-size: 0.8em;
+}
+.actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  flex-grow: 1;
+}
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px;
+}
+.actions-grid button {
+  font-size: 0.8em;
+  padding: 5px;
+  width: 100%;
+}
+@media (min-width: 650px) {
+  .user-panel {
+    flex-direction: row;
+  }
+}
+
+
+
+/* On Board Inventory Displays */
+.resources-inventory {
+position: absolute;
+display: flex;
+flex-direction: column;
+top: 3px;
+left: 3px;
+background-color: rgba(255, 255, 255, 0.8);
+padding: 3px;
+border-radius: 5px;
+font-size: 0.7em; /* Adjust font size as needed */
+}
+.resources-inventory h4 {
+margin: 0 0 0 0;
+}
+.resources-inventory .wood {
+background-color: darkolivegreen;
+}
+.resources-inventory .brick {
+background-color: firebrick;
+}
+.resources-inventory .sheep {
+background-color: limegreen;
+}
+.resources-inventory .wheat {
+background-color: gold;
+}
+.resources-inventory .ore {
+background-color: dimgray;
+}
+.inventory-summary {
+position: absolute;
+bottom: 3px;
+left: 3px;
+background-color: rgba(255, 255, 255, 0.8);
+padding: 3px;
+border-radius: 5px;
+font-size: 0.7em;
+}
+.inventory-summary h4 {
+margin: 0 0 0 0;
+}
+.largest-army {
+position: absolute;
+bottom: 3px;
+right: 3px;
+background-color: rgba(255, 255, 255, 0.8);
+padding: 3px;
+border-radius: 5px;
+font-size: 0.7em;
+}
+.largest-army h4 {
+margin: 0 0 0 0;
+}
+.longest-road {
+position: absolute;
+top: 3px;
+right: 3px;
+background-color: rgba(255, 255, 255, 0.8);
+padding: 3px;
+border-radius: 5px;
+font-size: 0.7em;
+}
+.longest-road h4 {
+margin: 0 0 0 0;
+}
+.award {
+background-color: greenyellow;
+}

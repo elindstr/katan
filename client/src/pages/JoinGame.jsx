@@ -1,18 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import socket from '../socket';
-import './JoinGame.css';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { initializeSocket, getSocket } from '../socket';
+import Auth from '../utils/auth';
 
 const JoinGame = () => {
   const [games, setGames] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    socket.on('games', (updatedGames) => {
-      console.log('Received games:', updatedGames); // Debug log
-      setGames(updatedGames);
-    });
+    const token = Auth.getToken();
+    const socket = initializeSocket(token);
 
-    // Request the current list of games when the component mounts
     socket.emit('requestGames');
+
+    socket.on('games', (games) => {
+      const sortedGames = games.sort((a, b) => {
+        if (a.state.host < b.state.host) return -1;
+        if (a.state.host > b.state.host) return 1;
+        return new Date(b.state.createdOn) - new Date(a.state.createdOn) ;
+      });
+      setGames(sortedGames);
+      setLoading(false);
+      console.log('Games:', sortedGames);
+    });
 
     return () => {
       socket.off('games');
@@ -20,25 +31,36 @@ const JoinGame = () => {
   }, []);
 
   const handleJoinGame = (gameId) => {
-    socket.emit('joinGame', gameId);
+    navigate('/game-board', { state: { gameId, isHost: false } });
   };
 
+  if (loading) {
+    return <div>Loading games...</div>;
+  }
+
   return (
-    <div className="join-game-container">
+    <div className="join-game-container card">
       <h1>Join a Game</h1>
-      <ul className="game-list">
-        {games.map((game) => (
-          <li key={game.id} className="game-item">
-            <div>
-              <strong>Host:</strong> {game.host}
-            </div>
-            <div>
-              <strong>Seats:</strong> {game.seats.filter((seat) => seat === null).length} open
-            </div>
-            <button onClick={() => handleJoinGame(game.id)}>Join Game</button>
-          </li>
-        ))}
-      </ul>
+      {games.length > 0 ? (
+        <ul className="game-list">
+          {games.map((game) => (
+            <li key={game._id} className="game-item">
+              <div>
+                <strong>Host:</strong> {game.state.host}
+              </div>
+              <div>
+                <strong>Seats:</strong> {game.state.seats ? game.state.seats.filter(seat => seat === null).length : 0} open
+              </div>
+              <div>
+                <strong>Created On:</strong> {new Date(game.state.createdOn).toLocaleString()}
+              </div>
+              <button onClick={() => handleJoinGame(game._id)}>Join Game</button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div>No games available to join. Please check back later.</div>
+      )}
     </div>
   );
 };

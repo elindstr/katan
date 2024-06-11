@@ -1,7 +1,5 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Auth from '../utils/auth';
-import './Dashboard.css';
 
 const Dashboard = () => {
   const navigate = useNavigate();
