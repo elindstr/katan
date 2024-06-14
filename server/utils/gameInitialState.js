@@ -17,10 +17,8 @@ const gameInitialState = {
     //TODO maybe create isWaitingForPlayerRoll to precisely track state for reloading
     currentTurn: "",
     dice: [
-        {src: '/images/dice/1.png', 
-        alt: '1'},
-        {src: '/images/dice/1.png', 
-        alt: '1'}
+        {value: 1, src: '/images/dice/1.png', alt: 'Die: 1'},
+        {value: 1, src: '/images/dice/1.png', alt: 'Die: 1'}
     ],
     numSeats: 4, // seats assigned by host during setup
     seats: [],  // array of seated users' usernames
@@ -49,6 +47,7 @@ function playerGenerator () {
             roads: 15,
             settlements: 5,
             cities: 4,
+            wood: 0,
             brick: 0,
             lumber: 0,
             sheep: 0,
@@ -60,15 +59,11 @@ function playerGenerator () {
             monopoly: 0,
             victoryPoint: 0,
         },
-        points: {
-            settlements: 0,
-            cities: 0,
-            longestRoad: 0,
-            largestArmy: 0,
-            victoryPoints: 0,
-        },
         roadLength: 0,
         knightCount: 0,
+        longestRoad: false,
+        largestArmy: false,
+        points: 0,
     }
 }
 

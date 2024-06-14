@@ -1,5 +1,5 @@
 const { Server } = require('socket.io');
-const { Game } = require('../models');
+const { Game, Trade } = require('../models');
 const socketAuth = require('./socketAuth');
 const { gameInitialState, playerGenerator } = require('./gameInitialState');
 
@@ -100,10 +100,11 @@ const initializeSocket = (httpServer) => {
     });
 
     // User Actions
-    socket.on('handleAction', async (gameId, action) => {
+    socket.on('handleAction', async (gameId, action, arg1, arg2) => {
       console.log("handling user action:", action, "by", socket.username, "in game", gameId);
 
-      if (action === "Start Game") {
+      //currently dev
+      if (action === "Start Game") { 
         
         // Shuffle board
         const game = await shuffle(gameId);
@@ -136,7 +137,8 @@ const initializeSocket = (httpServer) => {
         io.to(gameId).emit('stateUpdated', updatedGame.state);
 
       } else if (action === "Roll Dice") {
-        const updatedGame = await rollDice(gameId);
+        await rollDice(gameId);
+        const updatedGame = await collectResources(gameId);
         io.to(gameId).emit('stateUpdated', updatedGame.state);
 
       // Granting build authorizations
@@ -158,11 +160,129 @@ const initializeSocket = (httpServer) => {
         const userColor = player.color
         socket.emit('isBuildingCity', userColor);
         
+        
       } else if (action === "Buy Development Card") {
+        // Select and remove a devCard
+        const game = await Game.findById(gameId);
+        const devCardSelected = game.state.devCards.pop();
+        let devCardSelectedType;
+        if (devCardSelected === "Knight") devCardSelectedType = 'knight';
+        if (devCardSelected === "Road Building") devCardSelectedType = 'roadBuilding';
+        if (devCardSelected === "Year of Plenty") devCardSelectedType = 'yearOfPlenty';
+        if (devCardSelected === "Monopoly") devCardSelectedType = 'monopoly';
+        if (devCardSelected === "Victory Point") devCardSelectedType = 'victoryPoint';
+
+        // Add to player's inventory
+        const player = game.state.players.find(player => player.username === socket.username);
+        player.inventory[devCardSelectedType] += 1;
+
+        game.markModified('state');
+        const updatedGame = await game.save();
+        io.to(gameId).emit('stateUpdated', updatedGame.state);
+        sendSystemMessage(gameId, `${socket.username} bought a development card`);
+
+      } else if (action === "Play Knight") {
+        const game = await Game.findById(gameId);
+        const player = game.state.players.find(player => player.username === socket.username);
         
-      } else if (action === "Play Development Card") {
-        
-      } else if (action === "Trade") {
+        // decrement knight from inventory and increment army
+        player.inventory.knight -= 1;
+        player.knightCount += 1;
+
+        // update state
+        game.markModified('state');
+        const updatedGame = await game.save();
+        io.to(gameId).emit('stateUpdated', updatedGame.state);
+        sendSystemMessage(gameId, `${socket.username} played knight card`);
+
+        // check largest army
+
+        // implement triggerRobberSteal
+        socket.emit('robberAuth');
+      
+      } else if (action === "Moved Robber") {
+        // arg1 = robberHexTarget; arg2 = robberUsername
+        console.log(`${socket.username} moved the robber to hex ID ${arg1} on player ${arg2}`)
+
+        const game = await Game.findById(gameId);
+        const stealer = game.state.players.find(player => player.username === socket.username);
+        const victim = game.state.players.find(player => player.username === arg2);
+
+        // move robber
+        game.state.hexes.forEach(hex => {
+          hex.hasRobber = false;
+        });
+        game.state.hex[arg1].hasRobber = true
+
+        // steal resources
+        const victimResources = [];
+        for (let resource in victim.inventory) {
+          for (let i = 0; i < victim.inventory[resource]; i++) {
+            victimResources.push(resource);
+          }
+        }
+        let stolenResource;
+        if (victimResources.length > 0) {
+          const randomIndex = Math.floor(Math.random() * victimResources.length);
+          stolenResource = victimResources[randomIndex];
+
+          stealer.inventory[stolenResource] += 1;
+          victim.inventory[stolenResource] -= 1;
+        }
+
+        // save and update state
+        game.markModified('state');
+        const updatedGame = await game.save();
+        io.to(gameId).emit('stateUpdated', updatedGame.state);
+        sendSystemMessage(gameId, `${socket.username} moved the robber and stole from ${arg2}`);
+
+
+      } else if (action === "Play Road Building") {
+        const game = await Game.findById(gameId);
+        const player = game.state.players.find(player => player.username === socket.username);
+        const userColor = player.color
+        socket.emit('isBuildingRoadTwice', userColor);  
+
+      } else if (action === "Play Year of Plenty Card") {
+        //arg1 = chosenResources object
+        console.log('YOP resource:', arg1)
+
+        const game = await Game.findById(gameId);
+        const player = game.state.players.find(player => player.username === socket.username);
+        for (const resource in arg1) {
+          if (arg1.hasOwnProperty(resource) && arg1[resource] > 0) {
+              player.inventory[resource] += arg1[resource];
+          }
+      }
+
+        // save and update state
+        game.markModified('state');
+        const updatedGame = await game.save();
+        io.to(gameId).emit('stateUpdated', updatedGame.state);
+        sendSystemMessage(gameId, `${socket.username} played year of plenty card`);
+
+      } else if (action === "Play Monopoly Card") {
+        // arg1 = resource to steal (string)
+        console.log('monopoly resource:', arg1);
+        const game = await Game.findById(gameId);
+        const player = game.state.players.find(player => player.username === socket.username);
+    
+        let totalStolen = 0;
+        game.state.players.forEach(otherPlayer => {
+            if (otherPlayer.username !== player.username) {
+                const stolenAmount = otherPlayer.inventory[arg1];
+                totalStolen += stolenAmount;
+                otherPlayer.inventory[arg1] = 0;
+            }
+        });
+        player.inventory[arg1] += totalStolen;
+    
+        // Save and update state
+        game.markModified('state');
+        const updatedGame = await game.save();
+        io.to(gameId).emit('stateUpdated', updatedGame.state);
+        sendSystemMessage(gameId, `${socket.username} played Monopoly card and stole ${totalStolen} ${arg1}`);
+
         
       } else if (action === "End Turn") {
       
@@ -184,8 +304,9 @@ const initializeSocket = (httpServer) => {
             color: player.color,
             username: player.username
           }
-          console.log(player.color, player.username)
-          console.log(game.state.roads[id])
+          // update longestRoad
+          const longestRoad = await calculateLongestRoad(game.state.roads, player.username)
+          player.roadLength = longestRoad
         }
         if (type == "settlement") {
           game.state.settlements[id] = {
@@ -193,8 +314,6 @@ const initializeSocket = (httpServer) => {
             color: player.color,
             username: player.username
           }
-          console.log(player.color, player.username)
-          console.log(game.state.settlements[id])
         }
         if (type == "city") {
           game.state.settlements[id] = {
@@ -206,8 +325,8 @@ const initializeSocket = (httpServer) => {
         }
         
         // update player inventory  (TODO)
-        // update player points     (TODO)
         // check for longest road   (TODO)
+        // update player points     (TODO)
 
         // Save state and announce
         game.markModified('state');
@@ -217,6 +336,64 @@ const initializeSocket = (httpServer) => {
 
       } catch (error) {
         console.error('Error during build:', error);
+      }
+    });
+
+    // Trading
+    socket.on('makeOffer', async (gameId, offer) => {
+      console.log(`${socket.username} made a trade offer.`)
+      try {
+        const game = await Game.findById(gameId);
+        offer.offerer = socket.username
+        const newTrade = await Trade.create({ gameId, offer })
+        offer.tradeId = newTrade.id
+
+        io.to(gameId).emit('sendOffer', offer);
+        sendSystemMessage(gameId, `${socket.username} made a trade offer.`);
+      } catch (error) {
+        console.error('Error communicating trade:', error);
+      }
+    });
+    
+    socket.on('acceptOffer', async (gameId, offer) => {
+      console.log('offer:', offer)
+      console.log(`${offer.offerer} made a trade offer.`)
+      try {
+        const tradeConfirmation = await Trade.updateOne(
+          { _id: offer.tradeId }, 
+          { $set: { accepted: true } }
+        );
+        console.log('tradeConfirmation:', tradeConfirmation)
+        if (tradeConfirmation.modifiedCount === 0) {
+          // error accepting trade; or trade already accepted
+          console.log('there was a problem accepting the trade:', tradeConfirmation)
+          return null
+        }      
+        
+        // implement trade
+        const game = await Game.findById(gameId);
+        const offerer = game.state.players.find(player => player.username === offer.offerer);
+        const accepter = game.state.players.find(player => player.username === socket.username);
+
+        // Update inventories based on the trade offer
+        Object.entries(offer.offererGiving).forEach(([resource, amount]) => {
+          offerer.inventory[resource] -= amount;
+          accepter.inventory[resource] += amount;
+        });
+
+        Object.entries(offer.offererReceiving).forEach(([resource, amount]) => {
+          offerer.inventory[resource] += amount;
+          accepter.inventory[resource] -= amount;
+        });
+        
+        // update
+        game.markModified('state');
+        const updatedGame = await game.save();
+        io.to(gameId).emit('stateUpdated', updatedGame.state);
+        sendSystemMessage(gameId, `${socket.username} accepted ${offer.offerer}'s offer.`);
+
+      } catch (error) {
+        console.error('Error accepting trade:', error);
       }
     });
 
@@ -309,6 +486,7 @@ async function shuffle(gameId) {
   const desertHexIndex = hexes.findIndex(hex => hex.resource === 'desert');
   const emptyValueHexIndex = hexes.findIndex(hex => hex.value === '');
   [hexes[desertHexIndex].value, hexes[emptyValueHexIndex].value] = [hexes[emptyValueHexIndex].value, hexes[desertHexIndex].value];
+  hexes[desertHexIndex].hasRobber = true
 
   // Shuffle development cards
   const devCards = shuffleArray([...game.state.devCards]);
@@ -326,6 +504,7 @@ async function shuffle(gameId) {
     ports
   };
 
+  game.markModified('state');
   const updatedGame = await game.save();
   return updatedGame;
 }
@@ -350,5 +529,104 @@ async function rollDice(gameId) {
   const updatedGame = await game.save();
   return updatedGame;
 }
+
+// Collect Resources For Current Roll
+async function collectResources(gameId) {
+  console.log("collecting resources");
+  const game = await Game.findById(gameId);
+  const diceTotal = game.state.dice[0].value + game.state.dice[1].value;
+  game.state.hexes.forEach(hex => {
+    if (hex.value === diceTotal && !hex.hasRobber) {
+      hex.adjacentNodes.forEach(nodeId => {
+        const settlement = game.state.settlements[nodeId];
+
+        if (settlement && settlement.username) {
+          const player = game.state.players.find(player => player.username === settlement.username);
+
+          if (player) {
+            const resourceType = hex.resource;
+            if (settlement.isCity) {
+              player.inventory[resourceType] = (player.inventory[resourceType] || 0) + 2;
+            } else {
+              player.inventory[resourceType] = (player.inventory[resourceType] || 0) + 1;
+            }
+            console.log(`Player ${player.username} received ${settlement.isCity ? 2 : 1} ${resourceType}`);
+          }
+        }
+      });
+    }
+  });
+  game.markModified('state.players');
+  const updatedGame = await game.save();
+  return updatedGame;
+}
+
+
+// Calculate Longest Road (Path of Roads)
+function calculateLongestRoad(roads, username) {
+  const userRoads = roads.filter(road => road.username === username);
+  let paths = [];
+
+  // Review userRoads; locate userRoads that are dead ends; and push each dead end into 'paths' as the beginning road of a potential longest path segment.
+  userRoads.forEach(road => {
+    const leftDeadEnd = !userRoads.some(r => road.adjacentRoadsLeft.includes(r.id));
+    const rightDeadEnd = !userRoads.some(r => road.adjacentRoadsRight.includes(r.id));
+    if (leftDeadEnd) {
+      paths.push([{ 
+        roadId: road.id, 
+        possibleAdjacents: road.adjacentRoadsRight
+      }]);
+    }
+    if (rightDeadEnd) {
+      paths.push([{ 
+        roadId: road.id, 
+        possibleAdjacents: road.adjacentRoadsLeft
+      }]);
+    }
+  });
+
+  // Now for each path, look at the last element in the path, and check if any of possibleAdjacents includes any of the userRoads not already in the current path. If there are more than one matches, branch into a new path.
+  let longestRoad = 0;
+  paths.forEach(path => {
+    let stack = [path];
+    while (stack.length > 0) {
+      const currentPath = stack.pop();
+      const lastElement = currentPath[currentPath.length - 1];
+      const lastElementId = lastElement.roadId;
+      const possibleAdjacents = lastElement.possibleAdjacents;
+
+      let extended = false;
+      possibleAdjacents.forEach(adjId => {
+        if (!currentPath.some(p => p.roadId === adjId)) {
+          const adjacentRoad = userRoads.find(r => r.id === adjId);
+          if (adjacentRoad) {
+
+            // Determine next possibleAdjacents by finding id of current road in the next road's adjacencies and looking only in the other direction
+            let nextPossibleAdjacents;
+            if (adjacentRoad.adjacentRoadsRight.includes(lastElementId)) {
+              nextPossibleAdjacents = adjacentRoad.adjacentRoadsLeft;
+            } else if (adjacentRoad.adjacentRoadsLeft.includes(lastElementId)) {
+              nextPossibleAdjacents = adjacentRoad.adjacentRoadsRight;
+            } else {
+              console.log('error; found broken road chain with', lastElementId, 'and',  adjacentRoad.roadId);
+              // could be error in gameInitialRoads.js data 
+            }
+            const newPath = [...currentPath, 
+              { roadId: adjId, 
+                possibleAdjacents: nextPossibleAdjacents, 
+              }];
+            stack.push(newPath);
+            extended = true;
+          }
+        }
+      });
+      if (!extended) {
+        longestRoad = Math.max(longestRoad, currentPath.length);
+      }
+    }
+  });
+  return longestRoad;
+}
+
 
 module.exports = initializeSocket;

@@ -1,5 +1,5 @@
 // Settlement.jsx
-function Settlement({ id, x, y, hexSize, isCity, color, userColor, isBuildingSettlement, isBuildingCity, handleBuildAction, dev }) {
+function Settlement({ id, x, y, hexSize, isCity, username, color, userColor, isBuildingSettlement, isBuildingCity, handleBuildAction, dev, handleRobberPlayerClick }) {
   const size = hexSize * 0.2;
   const settlementStyle = {
     position: 'absolute',
@@ -40,7 +40,7 @@ function Settlement({ id, x, y, hexSize, isCity, color, userColor, isBuildingSet
   }
 
   if (color) {
-    return <div className="settlement" style={ isCity? cityStyle: settlementStyle }></div>
+    return <div className="settlement" style={ isCity? cityStyle: settlementStyle } onClick={() => handleRobberPlayerClick(username, id)}></div>
   }
 
   if (isBuildingSettlement) {
@@ -56,7 +56,7 @@ function Settlement({ id, x, y, hexSize, isCity, color, userColor, isBuildingSet
     return <div 
               className="settlement hover-display" 
               style={settlementStyle}
-              onClick={() => console.log('settlement', id)}
+              onClick={() => console.log('settlement', id, username)}
           ></div>;
   }
 

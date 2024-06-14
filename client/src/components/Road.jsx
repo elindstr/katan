@@ -1,7 +1,6 @@
 // Road.jsx
-function Road({ id, x, y, orient, hexSize, color, userColor, isBuildingRoad, handleBuildAction, dev }) {
+function Road({ id, x, y, orient, hexSize, color, userColor, isBuildingRoad, isBuildingRoadTwice, handleBuildAction, dev }) {
   let path;
-
   if (orient === 2) {
     path = `
       50% -3%,
@@ -45,7 +44,6 @@ function Road({ id, x, y, orient, hexSize, color, userColor, isBuildingRoad, han
       5% 30%
     `;
   }
-
   const style = {
     backgroundColor: userColor,
     position: 'absolute',
@@ -55,10 +53,14 @@ function Road({ id, x, y, orient, hexSize, color, userColor, isBuildingRoad, han
     height: `${hexSize}px`
   };
 
+
+  const handleBuildingRoadTwice = (type, id) => {
+    handleBuildAction('isBuildingRoadTwice', id)
+  }
+
   if (color) {
     return <div className="road" style={style}></div>
   }
-
   if (isBuildingRoad) {
     return (
           <div 
@@ -67,25 +69,24 @@ function Road({ id, x, y, orient, hexSize, color, userColor, isBuildingRoad, han
               onClick={() => handleBuildAction('road', id)}
           ></div>
   )}
+  if (isBuildingRoadTwice) {
+    return (
+          <div 
+              className="road hover-display" 
+              style={style}
+              onClick={() => handleBuildingRoadTwice('road', id)}
+          ></div>
+  )}
 
   // Dev
-  const textStyle = {
-    backgroundColor: 'red',
-    position: 'absolute',
-    transform: `translate(${x}px, ${y}px)`,
-    fontSize: '20px',
-    width: `${hexSize}px`,
-    height: `${hexSize}px`
-  };
   if (dev) {
-    return (<>
+    return (
     <div 
       className="road hover-display" 
       style={style}
-      onClick={() => console.log('road', id)}
-    ></div>
-    {/* <span style={textStyle}>{id}</span> */}
-    </>)
+      onClick={() => console.log('road', id)}>
+    </div>
+    )
   }
 
   return (<></>)

@@ -5,11 +5,10 @@ import Settlement from './Settlement';
 import Port from './Port';
 import InventoryResources from './InventoryResources';
 import InventoryMaterials from './InventoryMaterials';
-import BoardRoadTracker from './BoardRoadTracker';
-import BoardArmyTracker from './BoardArmyTracker';
+import BoardRoadArmyTracker from './BoardRoadArmyTracker';
+import BoardPointsTracker from './BoardPointsTracker';
 
-
-function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingRoad, isBuildingSettlement, isBuildingCity, userColor, inventoryResources, inventoryMaterials, userData}) {
+function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingRoad, isBuildingRoadTwice, isBuildingSettlement, isBuildingCity, userColor, inventoryResources, inventoryMaterials, userData, handleRobberHexClick, handleRobberPlayerClick}) {
   const [hexSize, setHexSize] = useState(0);
   const [boardStyle, setBoardStyle] = useState({});
 
@@ -32,6 +31,7 @@ function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingR
     });
   };
 
+
   // Set initial size and add resize event listener
   useEffect(() => {
     reSize();
@@ -47,8 +47,17 @@ function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingR
     <div className="board-container ">
       <InventoryResources inventoryResources={inventoryResources} />
       <InventoryMaterials inventoryMaterials={inventoryMaterials} />
-      <BoardRoadTracker longestRoad={userData? userData.roadLength: 0} hasLongestRoad={userData? userData.points.longestRoad: false} />
-      <BoardArmyTracker armySize={userData? userData.knightCount: 0} hasLargestArmy={userData? userData.points.largestArmy: false}  />
+      
+      <BoardRoadArmyTracker         
+        armySize={userData? userData.knightCount: 0} 
+        hasLargestArmy={userData? userData.largestArmy: false}
+        longestRoad={userData? userData.roadLength: 0} 
+        hasLongestRoad={userData? userData.longestRoad: false}  
+      />
+      
+      <BoardPointsTracker 
+        points={userData? userData.points: 0}  
+      />
 
       <div className="board" style={boardStyle}>
         {ports.map(port => (
@@ -56,7 +65,7 @@ function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingR
             <Port key={port.id} x={port.x * hexSize} y={port.y * hexSize} value={port.value} hexSize={hexSize} orient={port.orient} />
         ))}
         {hexes.map(hex => (
-          <Hex key={hex.id} id={hex.id} x={hex.x * hexSize} y={hex.y * hexSize} value={hex.value} hexSize={hexSize} resource={hex.resource} dev={false} />
+          <Hex key={hex.id} hex={hex} hexSize={hexSize} dev={false} handleRobberHexClick={handleRobberHexClick} />
         ))}
         {roads.map(road => (
           <Road 
@@ -68,6 +77,7 @@ function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingR
             hexSize={hexSize} 
             color={road.color} 
             isBuildingRoad={isBuildingRoad}
+            isBuildingRoadTwice={isBuildingRoadTwice}
             handleBuildAction={handleBuildAction}
             userColor={userColor}
             dev={false}
@@ -82,12 +92,14 @@ function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingR
             y={settlement.y * hexSize} 
             hexSize={hexSize}
             isCity={settlement.isCity}
-            color={settlement.color} 
+            color={settlement.color}
+            username={settlement.username}
             isBuildingSettlement={isBuildingSettlement}
             isBuildingCity={isBuildingCity}
             handleBuildAction={handleBuildAction}
             userColor={userColor}
             dev={false}
+            handleRobberPlayerClick={handleRobberPlayerClick}
           />
         ))}
 

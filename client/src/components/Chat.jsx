@@ -1,5 +1,14 @@
 // Chat.jsx
+import { useRef, useEffect } from "react";
+
 function Chat({ users, messages, handleSendMessage, handleKeyPress, setMessage, message }) {
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   const sendMessage = () => {
     handleSendMessage(message);
@@ -20,10 +29,11 @@ function Chat({ users, messages, handleSendMessage, handleKeyPress, setMessage, 
         <h3>Chat Messages</h3>
         <div className="messages-container">
           {messages.map((msg, index) => (
-            <div key={index}>
+            <div key={index} className="message">
               <strong>{msg.author}</strong>: {msg.body}
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
       </div>
       <div className="chat-input">

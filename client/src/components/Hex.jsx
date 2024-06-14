@@ -1,6 +1,13 @@
 // Hex.jsx
-function Hex({ id, x, y, value, hexSize, resource }) {
+function Hex({ hex, hexSize, dev, handleRobberHexClick }) {
   
+  const id = hex.id 
+  const x = hex.x * hexSize
+  const y = hex.y * hexSize
+  const value = hex.value
+  const resource = hex.resource
+  const hasRobber = hex.hasRobber
+
   let color
   if (resource == "wood") color = "darkolivegreen"
   if (resource == "brick") color = "firebrick"
@@ -25,11 +32,15 @@ function Hex({ id, x, y, value, hexSize, resource }) {
       1% 26%
     )`
   };
+  const robberStyle = {
+    color: 'black',
+    fontSize: '40px',
+  }
 
   return (
     <div className="hex" style={style}>
-      <div className="hex-inner">
-        {value}
+      <div className="hex-inner" onClick={() => handleRobberHexClick(hex.id)}>
+        {value} {hasRobber? <span style={robberStyle}>&#9823;</span>: null}
       </div>
     </div>
   );

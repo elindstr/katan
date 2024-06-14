@@ -1,6 +1,5 @@
 // Seats.jsx
 function Seats({ numPlayers, seats, handleSitDown }) {
-  // console.log("seats:", seats)
 
   return (
     <div className="seats">
