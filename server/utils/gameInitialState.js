@@ -4,11 +4,7 @@ const { settlements } = require('./gameInitialSettlements')
 const { ports } = require('./gameInitialPorts')
 
 const gameInitialState = {
-    messages: [
-        {author: "system",
-        body: "creating new game",
-        timestamp: Date.now()},
-    ],
+    messages: [],
     host: "",
     createdOn: Date.now(),
     isAlive: true,

@@ -4,6 +4,10 @@ import { useRef, useEffect } from "react";
 function Chat({ users, messages, handleSendMessage, handleKeyPress, setMessage, message }) {
   const messagesEndRef = useRef(null);
 
+  const systemStyle = {
+    color: 'darkred'
+  }
+
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -29,7 +33,7 @@ function Chat({ users, messages, handleSendMessage, handleKeyPress, setMessage, 
         <h3>Chat Messages</h3>
         <div className="messages-container">
           {messages.map((msg, index) => (
-            <div key={index} className="message">
+            <div key={index} className="message" style={msg.type?systemStyle: null}>
               <strong>{msg.author}</strong>: {msg.body}
             </div>
           ))}

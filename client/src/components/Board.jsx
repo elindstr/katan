@@ -3,8 +3,8 @@ import Hex from './Hex';
 import Road from './Road';
 import Settlement from './Settlement';
 import Port from './Port';
-import InventoryResources from './InventoryResources';
-import InventoryMaterials from './InventoryMaterials';
+import BoardResourcesTracker from './BoardResourcesTracker';
+import BoardInventoryTracker from './BoardInventoryTracker';
 import BoardRoadArmyTracker from './BoardRoadArmyTracker';
 import BoardPointsTracker from './BoardPointsTracker';
 
@@ -45,8 +45,8 @@ function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingR
   // main return
   return (
     <div className="board-container ">
-      <InventoryResources inventoryResources={inventoryResources} />
-      <InventoryMaterials inventoryMaterials={inventoryMaterials} />
+      <BoardResourcesTracker inventoryResources={inventoryResources} />
+      <BoardInventoryTracker inventoryMaterials={inventoryMaterials} />
       
       <BoardRoadArmyTracker         
         armySize={userData? userData.knightCount: 0} 

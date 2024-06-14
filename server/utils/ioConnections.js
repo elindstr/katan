@@ -35,7 +35,7 @@ const initializeSocket = (httpServer) => {
       author: 'system',
       body: messageBody,
       timestamp: Date.now(),
-      //TODO: add type: system displayed in unique style
+      type: 'system'
     };
     await handleSendMessage(gameId, message);
   };
@@ -56,9 +56,6 @@ const initializeSocket = (httpServer) => {
           host: socket.username,
           seats: Array(4).fill(null),
           createdOn: Date.now(),
-          messages: [
-            { author: 'system', body: 'creating new game', timestamp: Date.now() },
-          ],
         };
         await game.save();
         const gameId = game._id.toString();
@@ -181,6 +178,9 @@ const initializeSocket = (httpServer) => {
         io.to(gameId).emit('stateUpdated', updatedGame.state);
         sendSystemMessage(gameId, `${socket.username} bought a development card`);
 
+        // updates points
+        await updatePoints(gameId)
+
       } else if (action === "Play Knight") {
         const game = await Game.findById(gameId);
         const player = game.state.players.find(player => player.username === socket.username);
@@ -194,8 +194,6 @@ const initializeSocket = (httpServer) => {
         const updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
         sendSystemMessage(gameId, `${socket.username} played knight card`);
-
-        // check largest army
 
         // implement triggerRobberSteal
         socket.emit('robberAuth');
@@ -236,6 +234,8 @@ const initializeSocket = (httpServer) => {
         io.to(gameId).emit('stateUpdated', updatedGame.state);
         sendSystemMessage(gameId, `${socket.username} moved the robber and stole from ${arg2}`);
 
+        // updates points (and check for largest army)
+        await updatePoints(gameId)
 
       } else if (action === "Play Road Building") {
         const game = await Game.findById(gameId);
@@ -283,7 +283,7 @@ const initializeSocket = (httpServer) => {
         io.to(gameId).emit('stateUpdated', updatedGame.state);
         sendSystemMessage(gameId, `${socket.username} played Monopoly card and stole ${totalStolen} ${arg1}`);
 
-        
+
       } else if (action === "End Turn") {
       
       }
@@ -325,14 +325,15 @@ const initializeSocket = (httpServer) => {
         }
         
         // update player inventory  (TODO)
-        // check for longest road   (TODO)
-        // update player points     (TODO)
 
         // Save state and announce
         game.markModified('state');
         const updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
         sendSystemMessage(gameId, `${socket.username} built a ${type}`);
+
+        // updates points
+        await updatePoints(gameId)
 
       } catch (error) {
         console.error('Error during build:', error);
@@ -448,8 +449,97 @@ const initializeSocket = (httpServer) => {
     });
   });
 
+  // update points (and check longest road / largest army status)
+  const updatePoints = async (gameId) => {
+    console.log("updating points");
+    const game = await Game.findById(gameId);
+
+    if (!game) {
+      console.error("Game not found:", gameId);
+      return;
+    }
+
+    // update longest road and largest army holders
+    let longestRoadPlayer = null;
+    let minLongestRoad = 4;
+    let largestArmyPlayer = null;
+    let minLargestArmy = 2;
+
+    // check if any player already has award
+    game.state.players.forEach(player => {
+      if (player.longestRoad) {
+        longestRoadPlayer = player.username;
+        minLongestRoad = player.roadLength;
+      }
+      if (player.largestArmy) {
+        largestArmyPlayer = player.username;
+        minLargestArmy = player.knightCount;
+      }
+    });
+
+    // check for the minimum needed and (re)assign awards if new
+    game.state.players.forEach(player => {
+      if (player.roadLength > minLongestRoad) {
+        if (longestRoadPlayer) {
+          const prevHolder = game.state.players.find(p => p.username === longestRoadPlayer);
+          if (prevHolder) prevHolder.longestRoad = false;
+        }
+        player.longestRoad = true;
+        longestRoadPlayer = player.username;
+        minLongestRoad = player.roadLength;
+        sendSystemMessage(gameId, `${player.username} acquired the longest road!`);
+      }
+
+      if (player.knightCount > minLargestArmy) {
+        if (largestArmyPlayer) {
+          const prevHolder = game.state.players.find(p => p.username === largestArmyPlayer);
+          if (prevHolder) prevHolder.largestArmy = false;
+        }
+        player.largestArmy = true;
+        largestArmyPlayer = player.username;
+        minLargestArmy = player.knightCount;
+        sendSystemMessage(gameId, `${player.username} acquired the largest army!`);
+      }
+    });
+
+    // Update points for each player
+    game.state.players.forEach(player => {
+      player.points = 0;
+
+      // Count settlements
+      game.state.settlements.forEach(settlement => {
+        if (settlement.username === player.username) {
+          if (!settlement.isCity) {
+            player.points += 1;
+          } else {
+            player.points += 2;
+          }
+        }
+      });
+
+      // Count victory points and awards
+      player.points += player.inventory.victoryPoint || 0;
+      if (player.longestRoad) player.points += 2;
+      if (player.largestArmy) player.points += 2;
+    });
+
+    // Save and update
+    game.markModified('state');
+    const updatedGame = await game.save();
+    io.to(gameId).emit('stateUpdated', updatedGame.state);
+    console.log('Points updated');
+
+    // Check for win
+    updatedGame.state.players.forEach(player => {
+      if (player.points >= 10) {
+        sendSystemMessage(gameId, `${player.username} won!`);
+        io.to(gameId).emit('endGame');
+      }
+    })
+  };
+
   return io;
-};
+}; // END IO SERVER
 
 // Helper functions
 function shuffleArray(array) {
@@ -627,6 +717,5 @@ function calculateLongestRoad(roads, username) {
   });
   return longestRoad;
 }
-
 
 module.exports = initializeSocket;

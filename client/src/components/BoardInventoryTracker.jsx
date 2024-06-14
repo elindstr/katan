@@ -1,6 +1,6 @@
-//InventoryMaterials.jsx
+//BoardInventoryTracker.jsx
 
-function InventoryMaterials({ inventoryMaterials }) {
+function BoardInventoryTracker({ inventoryMaterials }) {
   return (
     <div className="inventory-summary">
       <h4>Inventory</h4>
@@ -11,4 +11,4 @@ function InventoryMaterials({ inventoryMaterials }) {
   );
 }
 
-export default InventoryMaterials;
+export default BoardInventoryTracker;

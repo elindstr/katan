@@ -116,6 +116,13 @@ function App() {
       setCurrentOffer(offer)
     });
 
+    // game over
+    socket.on('endGame', () => {
+      // todo: trigger game end; reveal cards
+      console.log("game over")
+      setCurrentMessage("game over")
+    });
+
     // clean up on dismount
     return () => {
       socket.off('users');

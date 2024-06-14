@@ -2,8 +2,6 @@
 import { useState } from 'react';
 
 function TradePanel({ userData, handleTradeOffer, setIsTrading, currentOffer, handleTradeResponse }) {
-
-  // create offer 
   const [offererGiving, setOffererGiving] = useState({
     wood: 0,
     brick: 0,
@@ -18,18 +16,33 @@ function TradePanel({ userData, handleTradeOffer, setIsTrading, currentOffer, ha
     wheat: 0,
     ore: 0,
   });
+
   const updateGiving = (resource, amount) => {
-    setOffererGiving(prev => ({
-      ...prev,
-      [resource]: prev[resource] + amount,
-    }));
+    setOffererGiving(prev => {
+      const newValue = prev[resource] + amount;
+      if (newValue >= 0 && newValue <= userData.inventory[resource]) {
+        return {
+          ...prev,
+          [resource]: newValue,
+        };
+      }
+      return prev;
+    });
   };
+
   const updateReceiving = (resource, amount) => {
-    setOffererReceiving(prev => ({
-      ...prev,
-      [resource]: prev[resource] + amount,
-    }));
+    setOffererReceiving(prev => {
+      const newValue = prev[resource] + amount;
+      if (newValue >= 0) {
+        return {
+          ...prev,
+          [resource]: newValue,
+        };
+      }
+      return prev;
+    });
   };
+
   const sendOffer = () => {
     const offer = {
       offerer: userData.username,
@@ -39,121 +52,157 @@ function TradePanel({ userData, handleTradeOffer, setIsTrading, currentOffer, ha
     handleTradeOffer(offer);
   };
 
-  // accepting offer
+  const canAcceptOffer = () => {
+    return ['wood', 'brick', 'sheep', 'wheat', 'ore'].every(resource => {
+      return inventory[resource] + currentOffer.offererGiving[resource] >= currentOffer.offererReceiving[resource];
+    });
+  };
+
+  if (!userData) {
+    return null;
+  }
+
+  const inventory = userData?.inventory || {
+    wood: 0,
+    brick: 0,
+    sheep: 0,
+    wheat: 0,
+    ore: 0,
+    knight: 0,
+    victoryPoint: 0,
+    roadBuilding: 0,
+    yearOfPlenty: 0,
+    monopoly: 0,
+  };
+
   if (currentOffer) {
     return (
       <div className="trade-panel">
-      <h4>Incoming Offer</h4>
-
-      <div className="trade-panel-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Resource</th>
-            {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
-              <th key={resource}>{resource.charAt(0).toUpperCase() + resource.slice(1)}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Offering</td>
-            {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
-              <td key={resource}>
-                {/* <button onClick={() => updateGiving(resource, -1)}>-</button> */}
-                {currentOffer.offererGiving[resource]}
-                {/* <button onClick={() => updateGiving(resource, 1)}>+</button> */}
-              </td>
-            ))}
-          </tr>
-          <tr>
-            <td>For</td>
-            {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
-              <td key={resource}>
-                {/* <button onClick={() => updateReceiving(resource, -1)}>-</button> */}
-                {currentOffer.offererReceiving[resource]}
-                {/* <button onClick={() => updateReceiving(resource, 1)}>+</button> */}
-              </td>
-            ))}
-          </tr>
-          <tr>
-            <td>Your Total</td>
-            {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
-              <td key={resource}>
-                {userData[resource] + currentOffer.offererGiving[resource] - currentOffer.offererReceiving[resource]}
-              </td>
-            ))}
-          </tr>
-        </tbody>
-      </table>
-
-      <div className="trade-actions">
-        <button onClick={() => handleTradeResponse('accept')}>Accept</button>
-        <button onClick={() => handleTradeResponse('decline')}>Decline</button>
+        <h4>Incoming Offer</h4>
+        <div className="trade-panel-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Resource</th>
+                {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
+                  <th key={resource}>{resource.charAt(0).toUpperCase() + resource.slice(1)}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Offering</td>
+                {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
+                  <td key={resource}>
+                    {currentOffer.offererGiving[resource]}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td>For</td>
+                {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
+                  <td key={resource}>
+                    {currentOffer.offererReceiving[resource]}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td>Your Total</td>
+                {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
+                  <td key={resource}>
+                    {inventory[resource] + currentOffer.offererGiving[resource] - currentOffer.offererReceiving[resource]}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+          <div className="trade-actions">
+            <button 
+              onClick={() => handleTradeResponse('accept')} 
+              disabled={!canAcceptOffer()}
+              style={!canAcceptOffer() ? { color: 'grey' } : null}
+            >
+              Accept
+            </button>
+            <button onClick={() => handleTradeResponse('decline')}>Decline</button>
+          </div>
+        </div>
       </div>
-
-      </div>
-    </div>
-
     )
   }
 
-  // creating offer
   return (
     <div className="trade-panel">
       <h4>Trade Offer</h4>
-
       <div className="trade-panel-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Resource</th>
-            {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
-              <th key={resource}>{resource.charAt(0).toUpperCase() + resource.slice(1)}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Offering</td>
-            {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
-              <td key={resource}>
-                <button onClick={() => updateGiving(resource, -1)}>-</button>
-                {offererGiving[resource]}
-                <button onClick={() => updateGiving(resource, 1)}>+</button>
-              </td>
-            ))}
-          </tr>
-          <tr>
-            <td>For</td>
-            {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
-              <td key={resource}>
-                <button onClick={() => updateReceiving(resource, -1)}>-</button>
-                {offererReceiving[resource]}
-                <button onClick={() => updateReceiving(resource, 1)}>+</button>
-              </td>
-            ))}
-          </tr>
-          <tr>
-            <td>Your Total</td>
-            {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
-              <td key={resource}>
-                {userData[resource] - offererGiving[resource] + offererReceiving[resource]}
-              </td>
-            ))}
-          </tr>
-        </tbody>
-      </table>
-
-      <div className="trade-actions">
-        <button onClick={sendOffer}>Send Offer</button>
-        <button onClick={() => setIsTrading(false)}>Cancel</button>
-      </div>
-
+        <table>
+          <thead>
+            <tr>
+              <th>Resource</th>
+              {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
+                <th key={resource}>{resource.charAt(0).toUpperCase() + resource.slice(1)}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Offering</td>
+              {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
+                <td key={resource}>
+                  <button 
+                    onClick={() => updateGiving(resource, -1)}
+                    disabled={offererGiving[resource] === 0}
+                  >
+                    -
+                  </button>
+                  {offererGiving[resource]}
+                  <button 
+                    onClick={() => updateGiving(resource, 1)}
+                    disabled={offererGiving[resource] >= inventory[resource]}
+                  >
+                    +
+                  </button>
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td>For</td>
+              {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
+                <td key={resource}>
+                  <button 
+                    onClick={() => updateReceiving(resource, -1)}
+                    disabled={offererReceiving[resource] === 0}
+                  >
+                    -
+                  </button>
+                  {offererReceiving[resource]}
+                  <button 
+                    onClick={() => updateReceiving(resource, 1)}
+                  >
+                    +
+                  </button>
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td>Your Total</td>
+              {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
+                <td key={resource}>
+                  {inventory[resource] - offererGiving[resource] + offererReceiving[resource]}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+        <div className="trade-actions">
+          <button onClick={sendOffer}>Send Offer</button>
+          <button onClick={() => setIsTrading(false)}>Cancel</button>
+        </div>
       </div>
     </div>
   );
 }
 
 export default TradePanel;
+
 

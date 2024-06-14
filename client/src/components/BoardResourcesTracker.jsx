@@ -1,5 +1,5 @@
-//InventoryResources.jsx
-function InventoryResources({ inventoryResources }) {
+//BoardResourcesTracker.jsx
+function BoardResourcesTracker({ inventoryResources }) {
   return (
     <div className="resources-inventory">
       <h4>Resources</h4>
@@ -12,4 +12,4 @@ function InventoryResources({ inventoryResources }) {
   );
 }
 
-export default InventoryResources;
+export default BoardResourcesTracker;
