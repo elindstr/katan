@@ -1,4 +1,7 @@
 // Settlement.jsx
+
+//todo: regulate settlement building within 1 node away; and must be connected to road except on initial build 
+
 function Settlement({ id, x, y, hexSize, isCity, username, color, userColor, isBuildingSettlement, isBuildingCity, handleBuildAction, dev, handleRobberPlayerClick }) {
   const size = hexSize * 0.2;
   const settlementStyle = {

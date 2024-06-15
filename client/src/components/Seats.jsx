@@ -1,23 +1,20 @@
 // Seats.jsx
-function Seats({ numPlayers, seats, handleSitDown }) {
+function Seats({ numPlayers, seatsObject, handleSitDown }) {
 
   return (
     <div className="seats">
-
-      {seats.slice(0, numPlayers).map((seat, index) => (
+      {seatsObject.slice(0, numPlayers).map((seat, index) => (
         <button
           key={index}
           className="seat"
           onClick={() => handleSitDown(index)}
         >
-          {seat ? `${seat}` : 'Empty Seat'}
+          {seat.username ? `${seat.username}` : 'Empty Seat'}
         </button>
       ))}
     </div>
-
-
   );
 }
-  
+
 export default Seats;
   

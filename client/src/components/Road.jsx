@@ -1,4 +1,7 @@
 // Road.jsx
+
+//todo: regulate road building as connected to road except on initial build
+
 function Road({ id, x, y, orient, hexSize, color, userColor, isBuildingRoad, isBuildingRoadTwice, handleBuildAction, dev }) {
   let path;
   if (orient === 2) {

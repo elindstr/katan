@@ -5,7 +5,7 @@ const { ports } = require('./gameInitialPorts')
 
 const gameInitialState = {
     messages: [],
-    host: "",
+    host: '',
     createdOn: Date.now(),
     isAlive: true,
     isInInitialSetup: false,
@@ -34,11 +34,17 @@ const gameInitialState = {
 
 function playerGenerator () {
     return {
-        username: "",
-        seat: "",
-        color: "",
-        initialRoll: 0,
-        initialOrder: "",
+        username: '',
+        seat: '',
+        color: '',
+        initialState: {
+            initialRoll: '',
+            placedFirstSettlement: false,
+            placedFirstRoad: false,
+            placedSecondSettlement: false,
+            placedSecondRoad: false,
+          },
+        turnOrder: '',
         inventory: {
             roads: 15,
             settlements: 5,

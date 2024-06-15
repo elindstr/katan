@@ -1,4 +1,3 @@
-//Gameboard.jsx
 import { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { initializeSocket, getSocket } from '../socket';
@@ -12,25 +11,26 @@ import Chat from './Chat';
 import Dice from './Dice';
 import Options from './Options';
 
-
 function App() {
-  const referralState = useLocation().state
+  const referralState = useLocation().state;
   const [gameId, setGameId] = useState([]);
   const [numPlayers, setNumPlayers] = useState(4);
   const [seats, setSeats] = useState(Array(4).fill(null));
+  const [seatsObject, setSeatsObject] = useState(Array(4).fill({ username: null, socketId: null }));
   const [users, setUsers] = useState([]);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const chatEndRef = useRef(null);
   const { username } = Auth.getProfile().data;
   const [userColor, setUserColor] = useState('black');
-  const [userData, setUserData] = useState(null)
-  
+  const [userData, setUserData] = useState(null);
+
   const [dice, setDice] = useState([]);
   const [hexes, setHexes] = useState([]);
   const [roads, setRoads] = useState([]);
   const [ports, setPorts] = useState([]);
   const [settlements, setSettlements] = useState([]);
+  const [isFreeBuild, setIsFreeBuild] = useState(true);
   const [isBuildingRoad, setIsBuildingRoad] = useState(false);
   const [isBuildingRoadTwice, setIsBuildingRoadTwice] = useState(false);
   const [isBuildingSettlement, setIsBuildingSettlement] = useState(false);
@@ -49,12 +49,10 @@ function App() {
 
     if (referralState?.isHost) {
       socket.emit('createGame', (createdGameId) => {
-        // console.log('Game created with ID:', createdGameId);
         setGameId(createdGameId);
         socket.emit('joinGame', createdGameId);
       });
     } else {
-      // console.log('Joining GameId:', referralState.gameId);
       socket.emit('joinGame', referralState.gameId);
       setGameId(referralState.gameId);
     }
@@ -66,64 +64,58 @@ function App() {
     socket.on('stateUpdated', (updatedState) => {
       console.log('State updated:', updatedState);
 
-      // store states
       setSeats(updatedState.seats || Array(updatedState.numSeats).fill(null));
-      setMessages(updatedState.messages || []);      
-      setHexes(updatedState.hexes)
-      setPorts(updatedState.ports)
-      setRoads(updatedState.roads)
-      setSettlements(updatedState.settlements)
-      setDice(updatedState.dice)
+      setSeatsObject(updatedState.seatsObject || Array(updatedState.numSeats).fill({ username: null, socketId: null }));
+      setMessages(updatedState.messages);
+      setHexes(updatedState.hexes);
+      setPorts(updatedState.ports);
+      setRoads(updatedState.roads);
+      setSettlements(updatedState.settlements);
+      setDice(updatedState.dice);
 
       const playerData = updatedState.players.find(player => player.username === username);
       setUserData(playerData);
     });
 
-    // building authorization
     socket.on('isBuildingRoad', (userColor) => {
-      setUserColor(userColor)
+      setUserColor(userColor);
       setIsBuildingRoad(true);
-      setCurrentMessage('Place your road.')
-      //todo: hide other control buttons; create a 'cancel' button that restores default state buttons
+      setCurrentMessage('Place your road.');
     });
+
     socket.on('isBuildingRoadTwice', (userColor) => {
-      setUserColor(userColor)
+      setUserColor(userColor);
       setIsBuildingRoadTwice(true);
-      setCurrentMessage('Place two roads.')
-      //todo: hide other control buttons; create a 'cancel' button that restores default state buttons
+      setCurrentMessage('Place two roads.');
     });
 
     socket.on('isBuildingSettlement', (userColor) => {
-      setUserColor(userColor)
+      setUserColor(userColor);
       setIsBuildingSettlement(true);
-      setCurrentMessage('Place your settlement.')
-    });
-    socket.on('isBuildingCity', (userColor) => {
-      setUserColor(userColor)
-      setIsBuildingCity(true);
-      setCurrentMessage('Place your city.')
+      setCurrentMessage('Place your settlement.');
     });
 
-    // steal authorization
+    socket.on('isBuildingCity', (userColor) => {
+      setUserColor(userColor);
+      setIsBuildingCity(true);
+      setCurrentMessage('Place your city.');
+    });
+
     socket.on('robberAuth', () => {
       console.log('robberAuth');
       setCurrentMessage('Select Hex to Move Robber');
       setRobberStep('robberSelectHex');
     });
 
-    // receiving trade offer
     socket.on('sendOffer', (offer) => {
-      setCurrentOffer(offer)
+      setCurrentOffer(offer);
     });
 
-    // game over
     socket.on('endGame', () => {
-      // todo: trigger game end; reveal cards
-      console.log("game over")
-      setCurrentMessage("game over")
+      console.log("game over");
+      setCurrentMessage("game over");
     });
 
-    // clean up on dismount
     return () => {
       socket.off('users');
       socket.off('stateUpdated');
@@ -139,10 +131,18 @@ function App() {
 
   const handleSitDown = (index) => {
     const socket = getSocket();
+    const socketId = socket.id;
+
     if (seats[index] === username) {
-      socket.emit('updateGameState', gameId, { seats: seats.map((seat, idx) => (idx === index ? null : seat)) });
+      socket.emit('updateGameState', gameId, {
+        // seats: seats.map((seat, idx) => (idx === index ? null : seat)),
+        seatsObject: seatsObject.map((seat, idx) => (idx === index ? { username: null, socketId: null } : seat))
+      });
     } else if (!seats.includes(username)) {
-      socket.emit('updateGameState', gameId, { seats: seats.map((seat, idx) => (idx === index ? username : seat)) });
+      socket.emit('updateGameState', gameId, {
+        // seats: seats.map((seat, idx) => (idx === index ? username : seat)),
+        seatsObject: seatsObject.map((seat, idx) => (idx === index ? { username, socketId } : seat))
+      });
     } else {
       console.log('You are already seated.');
     }
@@ -165,45 +165,44 @@ function App() {
     }
   };
 
-  // user actions
   const handleAction = (action, arg1) => {
     const socket = getSocket();
     socket.emit('handleAction', gameId, action, arg1);
   };
+
   const handleBuildAction = (type, id) => {
     const socket = getSocket();
 
-    if (type == "isBuildingRoadTwice") {
-      const typeMutation = "road"   
-      socket.emit('handleBuildAction', gameId, typeMutation, id);
-      setIsBuildingRoadTwice(false)
-      setIsBuildingRoad(true)
-    }
-
-    else {
-      setCurrentMessage('')
-      setIsBuildingRoad(false)
-      setIsBuildingRoadTwice(false)
-      setIsBuildingSettlement(false)
-      setIsBuildingCity(false)
-      socket.emit('handleBuildAction', gameId, type, id);
+    if (type === "isBuildingRoadTwice") {
+      const typeMutation = "road";
+      socket.emit('handleBuildAction', gameId, typeMutation, id, isFreeBuild);
+      setIsBuildingRoadTwice(false);
+      setIsBuildingRoad(true);
+    } else {
+      setCurrentMessage('');
+      setIsBuildingRoad(false);
+      setIsBuildingRoadTwice(false);
+      setIsBuildingSettlement(false);
+      setIsBuildingCity(false);
+      socket.emit('handleBuildAction', gameId, type, id, isFreeBuild);
     }
   };
+
   const handleTradeOffer = (offer) => {
-    setIsTrading(false)
+    setIsTrading(false);
     const socket = getSocket();
     socket.emit('makeOffer', gameId, offer);
-  }
+  };
+
   const handleTradeResponse = (response) => {
-    if (response == 'accept') {
+    if (response === 'accept') {
       const socket = getSocket();
       socket.emit('acceptOffer', gameId, currentOffer);
     }
-    setIsTrading(false)
-    setCurrentOffer(null)
-  }
+    setIsTrading(false);
+    setCurrentOffer(null);
+  };
 
-  // robber
   const handleRobberHexClick = (hexId) => {
     if (robberStep === 'robberSelectHex') {
       setRobberHexTarget(hexId);
@@ -211,6 +210,7 @@ function App() {
       setRobberStep('robberSelectPlayer');
     }
   };
+
   const handleRobberPlayerClick = (username) => {
     if (robberStep === 'robberSelectPlayer') {
       setRobberPlayerTarget(username);
@@ -225,19 +225,16 @@ function App() {
     // Logic to handle options drop down
   };
 
-  // trigger incoming trade offer 
   useEffect(() => {
     if (currentOffer) {
-      setIsTrading(true)
+      setIsTrading(true);
     }
   }, [currentOffer]);
 
-  return (<>
+  return (
     <div className="app">
       <div className="main-column">
-        
-        <Seats numPlayers={numPlayers} seats={seats} handleSitDown={handleSitDown} />
-        
+        <Seats numPlayers={numPlayers} seatsObject={seatsObject} handleSitDown={handleSitDown} />
         <Board 
           hexes={hexes}
           ports={ports}
@@ -255,29 +252,25 @@ function App() {
           handleRobberHexClick={handleRobberHexClick} 
           handleRobberPlayerClick={handleRobberPlayerClick}
         />
-
-        {!isTrading?
+        {!isTrading ? (
           <UserPanel
             currentMessage={currentMessage}
             handleAction={handleAction}
-            userData={userData? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0, knight: 0, victoryPoint: 0, roadBuilding: 0, yearOfPlenty: 0, monopoly: 0, roads: 15, settlements: 5, cities: 4 }}
+            userData={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0, knight: 0, victoryPoint: 0, roadBuilding: 0, yearOfPlenty: 0, monopoly: 0, roads: 15, settlements: 5, cities: 4 }}
             setIsTrading={setIsTrading} 
           />
-          :
+        ) : (
           <TradePanel 
-          userData={userData? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }} 
-          setIsTrading={setIsTrading}
-          handleTradeOffer={handleTradeOffer}
-          currentOffer={currentOffer}
-          handleTradeResponse={handleTradeResponse}
-          />}
-
+            userData={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }} 
+            setIsTrading={setIsTrading}
+            handleTradeOffer={handleTradeOffer}
+            currentOffer={currentOffer}
+            handleTradeResponse={handleTradeResponse}
+          />
+        )}
       </div>
-
       <div className="side-column">
-
         <Options handleOptionChange={handleOptionChange} />
-        
         <Chat 
           users={users} 
           messages={messages} 
@@ -286,16 +279,10 @@ function App() {
           setMessage={setMessage}
           message={message}
         />
-        
-        <Dice
-          dice={dice}
-          handleDiceAction={(action) => handleAction(action)}
-        />
-
+        <Dice dice={dice} handleDiceAction={(action) => handleAction(action)} />
       </div>
     </div>
-    
-  </>);
+  );
 }
 
 export default App;
