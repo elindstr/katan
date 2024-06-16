@@ -8,7 +8,7 @@ import BoardInventoryTracker from './BoardInventoryTracker';
 import BoardRoadArmyTracker from './BoardRoadArmyTracker';
 import BoardPointsTracker from './BoardPointsTracker';
 
-function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingRoad, isBuildingRoadTwice, isBuildingSettlement, isBuildingCity, userColor, inventoryResources, inventoryMaterials, userData, handleRobberHexClick, handleRobberPlayerClick}) {
+function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingRoad, isBuildingRoadOneOfTwo, isBuildingRoadTwoOfTwo, isInitialSettlementPlacement, isInitialRoadPlacement, isBuildingSettlement, isBuildingCity, userColor, inventoryResources, inventoryMaterials, userData, handleRobberHexClick, handleRobberPlayerClick}) {
   const [hexSize, setHexSize] = useState(0);
   const [boardStyle, setBoardStyle] = useState({});
 
@@ -77,9 +77,11 @@ function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingR
             hexSize={hexSize} 
             color={road.color} 
             isBuildingRoad={isBuildingRoad}
-            isBuildingRoadTwice={isBuildingRoadTwice}
+            isBuildingRoadOneOfTwo={isBuildingRoadOneOfTwo}
+            isBuildingRoadTwoOfTwo={isBuildingRoadTwoOfTwo}
+            isInitialRoadPlacement={isInitialRoadPlacement}
             handleBuildAction={handleBuildAction}
-            userColor={userColor}
+            userColor={userData? userData.color: 'black'}
             dev={false}
           />
         ))}
@@ -96,8 +98,9 @@ function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingR
             username={settlement.username}
             isBuildingSettlement={isBuildingSettlement}
             isBuildingCity={isBuildingCity}
+            isInitialSettlementPlacement={isInitialSettlementPlacement}
             handleBuildAction={handleBuildAction}
-            userColor={userColor}
+            userColor={userData? userData.color: 'black'}
             dev={false}
             handleRobberPlayerClick={handleRobberPlayerClick}
           />

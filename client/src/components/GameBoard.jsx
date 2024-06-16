@@ -30,12 +30,20 @@ function App() {
   const [roads, setRoads] = useState([]);
   const [ports, setPorts] = useState([]);
   const [settlements, setSettlements] = useState([]);
-  const [isFreeBuild, setIsFreeBuild] = useState(true);
   const [isBuildingRoad, setIsBuildingRoad] = useState(false);
-  const [isBuildingRoadTwice, setIsBuildingRoadTwice] = useState(false);
+  const [isBuildingRoadOneOfTwo, setIsBuildingRoadOneOfTwo] = useState(false);
+  const [isBuildingRoadTwoOfTwo, setIsBuildingRoadTwoOfTwo] = useState(false);
   const [isBuildingSettlement, setIsBuildingSettlement] = useState(false);
   const [isBuildingCity, setIsBuildingCity] = useState(false);
   const [isTrading, setIsTrading] = useState(false);
+  const [isRollingDice, setIsRollingDice] = useState(false);
+  const [isInitialRoll, setInitialRoll] = useState(false);
+  const [isInitialSettlementPlacement, setIsInitialSettlementPlacement] = useState(false);
+  const [isInitialRoadPlacement, setIsInitialRoadPlacement] = useState(false);
+
+  
+  const [isFreeBuild, setIsFreeBuild] = useState(true);
+  
   const [currentOffer, setCurrentOffer] = useState(null);
   const [currentMessage, setCurrentMessage] = useState(null);
 
@@ -61,6 +69,28 @@ function App() {
       setUsers(updatedUsers);
     });
 
+    socket.on('getInitialRoll', () => {
+      setCurrentMessage("Roll dice to see who starts.")
+      setInitialRoll(true)
+    })
+    socket.on('placeFirstSettlement', () => {
+      setIsInitialSettlementPlacement(true)
+      setCurrentMessage("Place first settlement.")
+    })
+    socket.on('placeFirstRoad', () => {
+      setIsInitialRoadPlacement(true)
+      setCurrentMessage("Place first road.")
+    })
+    socket.on('placeSecondSettlement', () => {
+      setIsInitialSettlementPlacement(true)
+      setCurrentMessage("Place second settlement.")
+    })
+    socket.on('placeSecondRoad', () => {
+      setIsInitialRoadPlacement(true)
+      setCurrentMessage("Place second road.")
+      //trigger road mutation rule (must be connected)
+    })
+
     socket.on('stateUpdated', (updatedState) => {
       console.log('State updated:', updatedState);
 
@@ -85,7 +115,7 @@ function App() {
 
     socket.on('isBuildingRoadTwice', (userColor) => {
       setUserColor(userColor);
-      setIsBuildingRoadTwice(true);
+      setIsBuildingRoadOneOfTwo(true);
       setCurrentMessage('Place two roads.');
     });
 
@@ -168,23 +198,47 @@ function App() {
   const handleAction = (action, arg1) => {
     const socket = getSocket();
     socket.emit('handleAction', gameId, action, arg1);
+
+    // resets
+    setCurrentMessage("")
+    setInitialRoll(false)
+    setIsRollingDice(false)
   };
 
   const handleBuildAction = (type, id) => {
     const socket = getSocket();
 
-    if (type === "isBuildingRoadTwice") {
+    if (type === "isBuildingRoadOneOfTwo") {
       const typeMutation = "road";
       socket.emit('handleBuildAction', gameId, typeMutation, id, isFreeBuild);
-      setIsBuildingRoadTwice(false);
-      setIsBuildingRoad(true);
+      setCurrentMessage('');
+      setIsBuildingRoadOneOfTwo(false);
+      setIsBuildingRoadTwoOfTwo(true);
+
+    } else if (type === "isBuildingRoadTwoOfTwo") {
+      const typeMutation = "road";
+      socket.emit('handleBuildAction', gameId, typeMutation, id, isFreeBuild);
+      setCurrentMessage('');
+      setIsBuildingRoadTwoOfTwo(false);
+  
+    } else if (type === "isInitialRoad") {
+      const typeMutation = "isInitialRoad";
+      socket.emit('handleBuildAction', gameId, typeMutation, id);
+      setCurrentMessage('');
+      setIsInitialRoadPlacement(false);
+      
+    } else if (type === "isInitialSettlement") {
+      const typeMutation = "isInitialSettlement";
+      socket.emit('handleBuildAction', gameId, typeMutation, id);
+      setCurrentMessage('');
+      setIsInitialSettlementPlacement(false);
+
     } else {
       setCurrentMessage('');
       setIsBuildingRoad(false);
-      setIsBuildingRoadTwice(false);
       setIsBuildingSettlement(false);
       setIsBuildingCity(false);
-      socket.emit('handleBuildAction', gameId, type, id, isFreeBuild);
+      socket.emit('handleBuildAction', gameId, type, id);
     }
   };
 
@@ -242,9 +296,12 @@ function App() {
           settlements={settlements}
           handleBuildAction={handleBuildAction}
           isBuildingRoad={isBuildingRoad}
-          isBuildingRoadTwice={isBuildingRoadTwice}
+          isBuildingRoadOneOfTwo={isBuildingRoadOneOfTwo}
+          isBuildingRoadTwoOfTwo={isBuildingRoadTwoOfTwo}
           isBuildingSettlement={isBuildingSettlement}
           isBuildingCity={isBuildingCity}
+          isInitialSettlementPlacement={isInitialSettlementPlacement}
+          isInitialRoadPlacement={isInitialRoadPlacement}
           userColor={userColor}
           inventoryResources={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }}
           inventoryMaterials={userData ? userData.inventory : { knight: 0, victoryPoint: 0, roadBuilding: 0, yearOfPlenty: 0, monopoly: 0, roads: 15, settlements: 5, cities: 4  }}
@@ -279,7 +336,12 @@ function App() {
           setMessage={setMessage}
           message={message}
         />
-        <Dice dice={dice} handleDiceAction={(action) => handleAction(action)} />
+        <Dice 
+          dice={dice} 
+          handleDiceAction={(action) => handleAction(action)}
+          isRollingDice={isRollingDice}
+          isInitialRoll={isInitialRoll}
+        />
       </div>
     </div>
   );

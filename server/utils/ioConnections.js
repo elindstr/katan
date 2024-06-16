@@ -109,8 +109,12 @@ const initializeSocket = (httpServer) => {
 
         // Generate players
         const colors = ["red", "blue", "green", "darkviolet"];
+        if (!game.state.seatsObject) {
+          console.log(`error starting ${gameId}; no one seated`)
+          return
+        }
         game.state.seatsObject.forEach((user, index) => {
-          if (user !== null) {
+          if (user.username !== null) {
             const player = playerGenerator();
             player.username = user.username; 
             player.socketId = user.socketId;
@@ -134,9 +138,26 @@ const initializeSocket = (httpServer) => {
         io.to(gameId).emit('getInitialRoll');
 
       } else if (action === "Roll Dice") {
-        await rollDice(gameId);
-        const updatedGame = await collectResources(gameId);
+        const game = await Game.findById(gameId);
+        game.state.dice = await rollDice(gameId);
+        await game.markModified('state');
+        await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
+
+        const updatedGame = await collectResources(gameId);
+
+      } else if (action === "Initial Roll") {
+        const game = await Game.findById(gameId);
+        const player = game.state.players.find(player => player.username === socket.username);
+        game.state.dice = await rollDice(gameId);
+        const roll = game.state.dice[0].value + game.state.dice[1].value 
+        player.initialState.initialRoll = roll
+
+        await game.markModified('state');
+        await game.save();
+        await sendSystemMessage(gameId, `${socket.username} rolled ${roll}`);
+
+        await checkInitialRolls(gameId)
 
       // Granting build authorizations
       } else if (action === "Build Road") {
@@ -324,6 +345,17 @@ const initializeSocket = (httpServer) => {
           const longestRoad = await calculateLongestRoad(game.state.roads, player.username)
           player.roadLength = longestRoad
         }
+        if (type == "isInitialRoad") {
+          game.state.roads[id] = {
+            ...game.state.roads[id],
+            color: player.color,
+            username: player.username
+          }
+
+          // update longestRoad
+          const longestRoad = await calculateLongestRoad(game.state.roads, player.username)
+          player.roadLength = longestRoad
+        }
         if (type == "settlement") {
           game.state.settlements[id] = {
             ...game.state.settlements[id],
@@ -336,6 +368,13 @@ const initializeSocket = (httpServer) => {
             player.inventory.brick -= 1
             player.inventory.sheep -= 1
             player.inventory.wheat -= 1
+          }
+        }
+        if (type == "isInitialSettlement") {
+          game.state.settlements[id] = {
+            ...game.state.settlements[id],
+            color: player.color,
+            username: player.username
           }
         }
         if (type == "city") {
@@ -361,98 +400,119 @@ const initializeSocket = (httpServer) => {
         // updates points
         await updatePoints(gameId)
 
+        // handle initial placement routing
+        if ( (type == 'isInitialRoad') || (type = 'isInitialSettlement')) {
+          routingInitialPlacements(gameId)
+        }
+
       } catch (error) {
         console.error('Error during build:', error);
       }
     });
 
-    // Initial Setup (XXX)
-
-    //io.to(gameId).emit('getInitialRoll') <--- triggered above in handling of Start Game button
+    // Initial Setup
+    // triggered above: io.to(gameId).emit('getInitialRoll') 
+    // initials rolls are reported through handleActions; which calls checkInitialRolls to check readiness
+    // then routingInitialPlacements() uses state to emit placement order
+    async function checkInitialRolls(gameId) {
+      try {
+        // Fetch the game from the database
+        const game = await Game.findById(gameId);
+        console.log(game.state.players);
     
-    socket.on('reportInitialRoll', async (gameId, roll) => {
+        let highestRoll = 0;
+        let highestPlayerIndex = 0;
+        let allPlayersRolled = true;
+    
+        // Check if all players have initialRoll values and find the highest roll
+        game.state.players.forEach((player, index) => {
+          if (!player.initialState.initialRoll) {
+            allPlayersRolled = false;
+            console.log(`Waiting for ${player.username}`);
+          }
+          if (player.initialState.initialRoll > highestRoll) {
+            highestPlayerIndex = index;
+            highestRoll = player.initialState.initialRoll;
+          }
+        });
+    
+        // If not all players have rolled, exit the function
+        if (!allPlayersRolled) {
+          return;
+        }
+    
+        // Assign turn orders starting from the highest rolling player
+        let turnOrder = 0;
+        let currentIndex = highestPlayerIndex;
+    
+        do {
+          console.log(currentIndex);
+          game.state.players[currentIndex].turnOrder = turnOrder;
+          turnOrder++;
+          currentIndex = (currentIndex + 1) % game.state.players.length;
+        } while (currentIndex !== highestPlayerIndex);
+    
+        const highestPlayer = game.state.players[highestPlayerIndex].username;
+        await sendSystemMessage(gameId, `${highestPlayer} starts by placing their first settlement and road.`);
+    
+        // Reorder players based on turnOrder
+        game.state.players.sort((a, b) => a.turnOrder - b.turnOrder);
+    
+        // Save and update the game state
+        game.markModified('state');
+        await game.save();
+    
+        // Trigger initial settlements
+        routingInitialPlacements(gameId);
+      } catch (error) {
+        console.error(`Error in checkInitialRolls: ${error}`);
+      }
+    }
+    
+    const routingInitialPlacements = async(gameId) => {
       const game = await Game.findById(gameId);
-      const player = game.state.players.find(player => player.username === socket.username);
+      
+      function countPlayerSettlements(player) {
+        return game.state.settlements.filter(hex => hex.username === player.username).length;
+      }
+      function countPlayerRoads(player) {
+        return game.state.roads.filter(road => road.username === player.username).length;
+      }
 
-      // update 
-      player.initialState.initialRoll = roll
+      for (let p = 0; p < game.state.players.length; p++) {
+        const player = game.state.players[p] 
+        if (countPlayerSettlements(player) == 0) {
+          io.to(player.socketId).emit('placeFirstSettlement');
+          console.log(countPlayerSettlements(player))
+          return
+        }
+        if (countPlayerRoads(player) == 0) {
+          io.to(player.socketId).emit('placeFirstRoad');
+          return
+        }
+      }
+      for (let p = game.state.players.length-1; p >= 0; p--) {
+        const player = game.state.players[p] 
+        if (countPlayerSettlements(player) == 1) {
+          io.to(player.socketId).emit('placeSecondSettlement');
+          return
+        }
+        if (countPlayerRoads(player) == 1) {
+          io.to(player.socketId).emit('placeSecondRoad');
+          return
+        }
+      }
 
-      // Save state and announce
+      game.state.isInInitialSetup = false
+      game.state.isInGame = true
+      game.state.currentTurn = 0
       game.markModified('state');
       const updatedGame = await game.save();
       io.to(gameId).emit('stateUpdated', updatedGame.state);
-      await sendSystemMessage(gameId, `${player.username} rolled ${roll}.`);
 
-      // Check if all players have initialRoll values
-      let isWaiting = false
-      game.players.forEach((player) => {
-        if (!player.initialState.initialRoll) isWaiting = true
-      })
-      if (isWaiting) {
-        return
-      }
+      await sendSystemMessage(gameId, `Game on!`);
+    }
 
-      // set player.turnOrder
-      let highestRoll = 0
-      let highestPlayer
-      let highestPlayerIndex 
-      game.players.forEach((player, index) => {
-        if (player.initialState.initialRoll > highestRoll) {
-          highestPlayer = player.username
-          highestPlayerIndex = index
-          highestRoll = player.initialState.initialRoll
-        }
-      })
-
-      let allAssignedTurns = false
-      let currentIndex = highestPlayerIndex
-      let turnOrder = 0
-      while (allAssignedTurns == false) {
-        player[currentIndex].turnOrder = turnOrder
-        turnOrder+=1
-
-        if (currentIndex == game.players.length-1) {
-          currentIndex = 0
-        } 
-        else {
-          currentIndex+=1
-        }
-      }
-
-      //save and update; trigger initial placements
-      await game.save();
-      await sendSystemMessage(gameId, `${highestPlayer} starts by placing their first settlement and road.`);
-
-      //todo: store socket id in player creation
-      io.emit.to('[firstPlayerSocketID').on('getInitialSettlement')
-    })
-
-    socket.on('reportInitialPlacement', async (gameId, type, locationId) => {
-      const game = await Game.findById(gameId);
-      const player = game.state.players.find(player => player.username === socket.username);
-
-      // update board
-
-      // todo: program dynamically based on turn and player state
-
-      //let nextType = getInitialSettlement
-      let nextType = getInitialRoad
-      // let currentPlayerSocketID = ...
-      // io.emit.to([currentPlayerSocketID]).on(type)
-
-      //check for all complete; then trigger start of real game play 
-
-    })
-
-    // emit(get initial rolls)
-    // track incoming rolls to player.initialState.initialRoll
-    // when all incoming rolls received, assign player.turnOrder
-    // 
-    // emit(get initial settlement and roads) in order based on player.initialState.placedFirstSettlement and player.turnOrder
-      // placedFirstSettlement: false,
-      // placedFirstRoad: false,
-      // placedSecondSettlement: false,
-      // placedSecondRoad: false (mutation to require road next to settlement)
 
     // Trading
     socket.on('makeOffer', async (gameId, offer) => {
@@ -717,22 +777,14 @@ async function shuffle(gameId) {
 // Roll dice
 async function rollDice(gameId) {
   console.log("running roll dice")
-  const game = await Game.findById(gameId);
-
   const getRandomDie = () => Math.floor(Math.random() * 6) + 1;
   const die1 = getRandomDie();
   const die2 = getRandomDie();
-
-  game.state = {
-    ...game.state,
-    dice: [
+  const dice = [
       { value: die1, src: `/images/dice/${die1}.png`, alt: `Die: ${die1}` },
       { value: die2, src: `/images/dice/${die2}.png`, alt: `Die: ${die2}` }
     ]
-  }
-
-  const updatedGame = await game.save();
-  return updatedGame;
+  return dice;
 }
 
 // Collect Resources For Current Roll
@@ -772,6 +824,8 @@ function calculateLongestRoad(roads, username) {
   const userRoads = roads.filter(road => road.username === username);
   let paths = [];
 
+  //todo: if any road segment is bisected by a settlement, the road ends
+
   // Review userRoads; locate userRoads that are dead ends; and push each dead end into 'paths' as the beginning road of a potential longest path segment.
   userRoads.forEach(road => {
     const leftDeadEnd = !userRoads.some(r => road.adjacentRoadsLeft.includes(r.id));
@@ -788,9 +842,12 @@ function calculateLongestRoad(roads, username) {
         possibleAdjacents: road.adjacentRoadsLeft
       }]);
     }
+
+    //include roads adjacent to enemy settlements as dead ends
+  
   });
 
-  // Now for each path, look at the last element in the path, and check if any of possibleAdjacents includes any of the userRoads not already in the current path. If there are more than one matches, branch into a new path.
+  // For each path, look at the last element in the path, and check if any of possibleAdjacents includes any of the userRoads not already in the current path. If there are more than one matches, branch into a new path.
   let longestRoad = 0;
   paths.forEach(path => {
     let stack = [path];
@@ -803,6 +860,9 @@ function calculateLongestRoad(roads, username) {
       let extended = false;
       possibleAdjacents.forEach(adjId => {
         if (!currentPath.some(p => p.roadId === adjId)) {
+
+          //kill path if adjacency requires passing through enemy settlement
+
           const adjacentRoad = userRoads.find(r => r.id === adjId);
           if (adjacentRoad) {
 
