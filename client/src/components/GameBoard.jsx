@@ -25,6 +25,7 @@ function App() {
   const [userColor, setUserColor] = useState('black');
   const [userData, setUserData] = useState(null);
 
+  const [currentMessage, setCurrentMessage] = useState(null);
   const [dice, setDice] = useState([]);
   const [hexes, setHexes] = useState([]);
   const [roads, setRoads] = useState([]);
@@ -36,17 +37,21 @@ function App() {
   const [isBuildingSettlement, setIsBuildingSettlement] = useState(false);
   const [isBuildingCity, setIsBuildingCity] = useState(false);
   const [isTrading, setIsTrading] = useState(false);
+  const [currentOffer, setCurrentOffer] = useState(null);
   const [isRollingDice, setIsRollingDice] = useState(false);
+
+  const [displayStartButton, setDisplayStartButton] = useState(false);
+  const [displayDiceButton, setDisplayDiceButton] = useState(false);
+  
   const [isInitialRoll, setInitialRoll] = useState(false);
   const [isInitialSettlementPlacement, setIsInitialSettlementPlacement] = useState(false);
   const [isInitialRoadPlacement, setIsInitialRoadPlacement] = useState(false);
-
-  
   const [isFreeBuild, setIsFreeBuild] = useState(true);
-  
-  const [currentOffer, setCurrentOffer] = useState(null);
-  const [currentMessage, setCurrentMessage] = useState(null);
 
+  const [isMyTurn, setIsMyTurn] = useState(false);
+  const [haveRolled, setHaveRolled] = useState(false);
+  const [currentTurn, setCurrentTurn] = useState(false);
+  
   const [robberStep, setRobberStep] = useState(null);
   const [robberHexTarget, setRobberHexTarget] = useState(null);
   const [robberPlayerTarget, setRobberPlayerTarget] = useState(null);
@@ -102,9 +107,25 @@ function App() {
       setRoads(updatedState.roads);
       setSettlements(updatedState.settlements);
       setDice(updatedState.dice);
+      setCurrentTurn(updatedState.currentTurn)
 
       const playerData = updatedState.players.find(player => player.username === username);
       setUserData(playerData);
+
+      if (!updatedState.isInGame && 
+        !updatedState.isInInitialSetup
+        //in production: add condition that requires 3-4 players
+      ) {setDisplayStartButton(true)
+      } else {setDisplayStartButton(false)}
+      
+
+      // game loop routing
+      if ((updatedState.isInGame == true) &&
+          (updatedState.currentTurn == playerData.turnOrder)) {
+
+            setIsMyTurn(true)
+            updatedState.haveRolled? setHaveRolled(true): setHaveRolled(false) 
+          }
     });
 
     socket.on('isBuildingRoad', (userColor) => {
@@ -165,12 +186,10 @@ function App() {
 
     if (seats[index] === username) {
       socket.emit('updateGameState', gameId, {
-        // seats: seats.map((seat, idx) => (idx === index ? null : seat)),
         seatsObject: seatsObject.map((seat, idx) => (idx === index ? { username: null, socketId: null } : seat))
       });
     } else if (!seats.includes(username)) {
       socket.emit('updateGameState', gameId, {
-        // seats: seats.map((seat, idx) => (idx === index ? username : seat)),
         seatsObject: seatsObject.map((seat, idx) => (idx === index ? { username, socketId } : seat))
       });
     } else {
@@ -202,7 +221,6 @@ function App() {
     // resets
     setCurrentMessage("")
     setInitialRoll(false)
-    setIsRollingDice(false)
   };
 
   const handleBuildAction = (type, id) => {
@@ -288,7 +306,12 @@ function App() {
   return (
     <div className="app">
       <div className="main-column">
-        <Seats numPlayers={numPlayers} seatsObject={seatsObject} handleSitDown={handleSitDown} />
+        <Seats 
+          numPlayers={numPlayers} 
+          seatsObject={seatsObject} 
+          handleSitDown={handleSitDown}
+          currentTurn={currentTurn} 
+        />
         <Board 
           hexes={hexes}
           ports={ports}
@@ -315,6 +338,8 @@ function App() {
             handleAction={handleAction}
             userData={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0, knight: 0, victoryPoint: 0, roadBuilding: 0, yearOfPlenty: 0, monopoly: 0, roads: 15, settlements: 5, cities: 4 }}
             setIsTrading={setIsTrading} 
+            isMyTurn={isMyTurn}
+            haveRolled={haveRolled}
           />
         ) : (
           <TradePanel 
@@ -341,6 +366,10 @@ function App() {
           handleDiceAction={(action) => handleAction(action)}
           isRollingDice={isRollingDice}
           isInitialRoll={isInitialRoll}
+          haveRolled={haveRolled}
+          displayStartButton={displayStartButton}
+          displayDiceButton={displayDiceButton}
+          isMyTurn={isMyTurn}
         />
       </div>
     </div>

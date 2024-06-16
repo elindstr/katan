@@ -1,7 +1,7 @@
 // UserPanel.jsx
 import { useState, useEffect } from 'react';
 
-function UserPanel({ currentMessage, userData, handleAction, setIsTrading }) {
+function UserPanel({ currentMessage, userData, handleAction, setIsTrading, isMyTurn, haveRolled }) {
 
   const [isPlayingYearofPlenty, setIsPlayingYearofPlenty] = useState(false);
   const [isPlayingMonopoly, setIsPlayingMonopoly] = useState(false);
@@ -59,8 +59,8 @@ function UserPanel({ currentMessage, userData, handleAction, setIsTrading }) {
   const hasRoadResources = (userData.wood >= 1) && (userData.brick >= 1)
   const hasSettlementResources = (userData.wood >= 1) && (userData.brick >= 1) && (userData.wheat >= 1) && (userData.sheep >= 1)
   const hasCityResources = (userData.wheat >= 2) && (userData.ore >= 3)
-  const hasDevelopmentCardResources = true //dev
-  // const hasDevelopmentCardResources = (userData.wheat >= 1) && (userData.ore >= 1) && (userData.sheep >= 1)
+  // const hasDevelopmentCardResources = true //dev
+  const hasDevelopmentCardResources = (userData.wheat >= 1) && (userData.ore >= 1) && (userData.sheep >= 1)
 
   const cantAfford = {
     color: 'grey',
@@ -94,6 +94,60 @@ function UserPanel({ currentMessage, userData, handleAction, setIsTrading }) {
       </div>
 
       <div className="actions">
+
+        {currentMessage &&
+          <div>{currentMessage}</div>
+        }
+
+        {!currentMessage && isMyTurn && haveRolled && !isPlayingMonopoly && !isPlayingYearofPlenty &&
+            <>
+            <h4>Actions</h4>
+            <div className="actions-grid">
+              <div className="hover-container">
+                <button 
+                  onClick={() => handleAction('Build Road')}
+                  style={!hasRoadResources ? cantAfford : {}}
+                  disabled={!hasRoadResources}
+                >Build Road</button>
+                {!hasRoadResources && (
+                  <span className="hover-popup">{resourceCosts.road}</span>
+                )}
+              </div>
+              <div className="hover-container">
+                <button 
+                  onClick={() => handleAction('Build Settlement')}
+                  style={!hasSettlementResources ? cantAfford : {}}
+                  disabled={!hasSettlementResources}
+                >Build Settlement</button>
+                {!hasSettlementResources && (
+                  <span className="hover-popup">{resourceCosts.settlement}</span>
+                )}
+              </div>
+              <div className="hover-container">
+                <button 
+                  onClick={() => handleAction('Build City')}
+                  style={!hasCityResources ? cantAfford : {}}
+                  disabled={!hasCityResources}
+                >Build City</button>
+                {!hasCityResources && (
+                  <span className="hover-popup">{resourceCosts.city}</span>
+                )}
+              </div>
+              <div className="hover-container">
+                <button 
+                  onClick={() => handleAction('Buy Development Card')}
+                  style={!hasDevelopmentCardResources ? cantAfford : {}}
+                  disabled={!hasDevelopmentCardResources}
+                >Buy Development Card</button>
+                {!hasDevelopmentCardResources && (
+                  <span className="hover-popup">{resourceCosts.developmentCard}</span>
+                )}
+              </div>
+              <button onClick={() => setIsTrading(true)}>Trade</button>
+            </div>
+          </>
+        }
+        
         {isPlayingMonopoly && (
           <>
             <h4>Select the resource to steal:</h4>
@@ -120,58 +174,6 @@ function UserPanel({ currentMessage, userData, handleAction, setIsTrading }) {
           </>
         )}
 
-        {(isPlayingYearofPlenty || isPlayingMonopoly) ? null : (
-          currentMessage ? (
-            <div>{currentMessage}</div>
-          ) : (
-            <>
-              <h4>Actions</h4>
-              <div className="actions-grid">
-                <div className="hover-container">
-                  <button 
-                    onClick={() => handleAction('Build Road')}
-                    style={!hasRoadResources ? cantAfford : {}}
-                    disabled={!hasRoadResources}
-                  >Build Road</button>
-                  {!hasRoadResources && (
-                    <span className="hover-popup">{resourceCosts.road}</span>
-                  )}
-                </div>
-                <div className="hover-container">
-                  <button 
-                    onClick={() => handleAction('Build Settlement')}
-                    style={!hasSettlementResources ? cantAfford : {}}
-                    disabled={!hasSettlementResources}
-                  >Build Settlement</button>
-                  {!hasSettlementResources && (
-                    <span className="hover-popup">{resourceCosts.settlement}</span>
-                  )}
-                </div>
-                <div className="hover-container">
-                  <button 
-                    onClick={() => handleAction('Build City')}
-                    style={!hasCityResources ? cantAfford : {}}
-                    disabled={!hasCityResources}
-                  >Build City</button>
-                  {!hasCityResources && (
-                    <span className="hover-popup">{resourceCosts.city}</span>
-                  )}
-                </div>
-                <div className="hover-container">
-                  <button 
-                    onClick={() => handleAction('Buy Development Card')}
-                    style={!hasDevelopmentCardResources ? cantAfford : {}}
-                    disabled={!hasDevelopmentCardResources}
-                  >Buy Development Card</button>
-                  {!hasDevelopmentCardResources && (
-                    <span className="hover-popup">{resourceCosts.developmentCard}</span>
-                  )}
-                </div>
-                <button onClick={() => setIsTrading(true)}>Trade</button>
-              </div>
-            </>
-          )
-        )}
       </div>
     </div>
   );

@@ -140,11 +140,12 @@ const initializeSocket = (httpServer) => {
       } else if (action === "Roll Dice") {
         const game = await Game.findById(gameId);
         game.state.dice = await rollDice(gameId);
+        game.state.haveRolled = true;
         await game.markModified('state');
-        await game.save();
+        updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
 
-        const updatedGame = await collectResources(gameId);
+        await collectResources(gameId);
 
       } else if (action === "Initial Roll") {
         const game = await Game.findById(gameId);
@@ -282,8 +283,8 @@ const initializeSocket = (httpServer) => {
           if (arg1.hasOwnProperty(resource) && arg1[resource] > 0) {
               player.inventory[resource] += arg1[resource];
           }
-      }
-      player.inventory.yearOfPlenty -= 1
+        }
+        player.inventory.yearOfPlenty -= 1
 
         // save and update state
         game.markModified('state');
@@ -316,9 +317,24 @@ const initializeSocket = (httpServer) => {
 
 
       } else if (action === "End Turn") {
+        try {
+          const game = await Game.findById(gameId);
+          
+          // get next next turn
+          game.state.currentTurn = (game.state.currentTurn + 1) % game.state.players.length;
+          
+          // Reset dice roll state
+          game.state.haveRolled = false;
       
+          // save and update
+          game.markModified('state');
+          const updatedGame = await game.save();
+          io.to(gameId).emit('stateUpdated', updatedGame.state);
+        } catch (error) {
+          console.error(`Error in handling End Turn action: ${error}`);
+        }
       }
-    });
+    })
 
     // Implementing builds
     socket.on('handleBuildAction', async (gameId, type, id, isFreeBuild) => {
@@ -330,6 +346,8 @@ const initializeSocket = (httpServer) => {
         
         // update board
         if (type == "road") {
+          await sendSystemMessage(gameId, `${socket.username} built a ${type}`);
+
           game.state.roads[id] = {
             ...game.state.roads[id],
             color: player.color,
@@ -357,6 +375,8 @@ const initializeSocket = (httpServer) => {
           player.roadLength = longestRoad
         }
         if (type == "settlement") {
+          await sendSystemMessage(gameId, `${socket.username} built a ${type}`);
+
           game.state.settlements[id] = {
             ...game.state.settlements[id],
             color: player.color,
@@ -369,6 +389,7 @@ const initializeSocket = (httpServer) => {
             player.inventory.sheep -= 1
             player.inventory.wheat -= 1
           }
+          
         }
         if (type == "isInitialSettlement") {
           game.state.settlements[id] = {
@@ -378,6 +399,8 @@ const initializeSocket = (httpServer) => {
           }
         }
         if (type == "city") {
+          await sendSystemMessage(gameId, `${socket.username} built a ${type}`);
+          
           game.state.settlements[id] = {
             ...game.state.settlements[id],
             color: player.color,
@@ -395,7 +418,6 @@ const initializeSocket = (httpServer) => {
         game.markModified('state');
         const updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
-        await sendSystemMessage(gameId, `${socket.username} built a ${type}`);
 
         // updates points
         await updatePoints(gameId)
@@ -503,9 +525,11 @@ const initializeSocket = (httpServer) => {
         }
       }
 
+      // setup for gameplay
       game.state.isInInitialSetup = false
       game.state.isInGame = true
       game.state.currentTurn = 0
+      game.state.haveRolled = false;
       game.markModified('state');
       const updatedGame = await game.save();
       io.to(gameId).emit('stateUpdated', updatedGame.state);
@@ -713,6 +737,37 @@ const initializeSocket = (httpServer) => {
     })
   };
 
+  // Collect Resources For Current Roll
+  async function collectResources(gameId) {
+    console.log("collecting resources");
+    const game = await Game.findById(gameId);
+    const diceTotal = game.state.dice[0].value + game.state.dice[1].value;
+    game.state.hexes.forEach(hex => {
+      if (hex.value === diceTotal && !hex.hasRobber) {
+        hex.adjacentNodes.forEach(nodeId => {
+          const settlement = game.state.settlements[nodeId];
+
+          if (settlement && settlement.username) {
+            const player = game.state.players.find(player => player.username === settlement.username);
+
+            if (player) {
+              const resourceType = hex.resource;
+              if (settlement.isCity) {
+                player.inventory[resourceType] = (player.inventory[resourceType] || 0) + 2;
+              } else {
+                player.inventory[resourceType] = (player.inventory[resourceType] || 0) + 1;
+              }
+              console.log(`Player ${player.username} received ${settlement.isCity ? 2 : 1} ${resourceType}`);
+            }
+          }
+        });
+      }
+    });
+    game.markModified('state.players');
+    const updatedGame = await game.save();
+    io.to(gameId).emit('stateUpdated', updatedGame.state);
+  }
+
   return io;
 }; // END IO SERVER
 
@@ -786,38 +841,6 @@ async function rollDice(gameId) {
     ]
   return dice;
 }
-
-// Collect Resources For Current Roll
-async function collectResources(gameId) {
-  console.log("collecting resources");
-  const game = await Game.findById(gameId);
-  const diceTotal = game.state.dice[0].value + game.state.dice[1].value;
-  game.state.hexes.forEach(hex => {
-    if (hex.value === diceTotal && !hex.hasRobber) {
-      hex.adjacentNodes.forEach(nodeId => {
-        const settlement = game.state.settlements[nodeId];
-
-        if (settlement && settlement.username) {
-          const player = game.state.players.find(player => player.username === settlement.username);
-
-          if (player) {
-            const resourceType = hex.resource;
-            if (settlement.isCity) {
-              player.inventory[resourceType] = (player.inventory[resourceType] || 0) + 2;
-            } else {
-              player.inventory[resourceType] = (player.inventory[resourceType] || 0) + 1;
-            }
-            console.log(`Player ${player.username} received ${settlement.isCity ? 2 : 1} ${resourceType}`);
-          }
-        }
-      });
-    }
-  });
-  game.markModified('state.players');
-  const updatedGame = await game.save();
-  return updatedGame;
-}
-
 
 // Calculate Longest Road (Path of Roads)
 function calculateLongestRoad(roads, username) {
