@@ -4,7 +4,8 @@ let socket;
 
 export const initializeSocket = (token) => {
   if (!socket) {
-    socket = io('http://localhost:3001', {
+    const serverUrl = process.env.NODE_ENV === 'production' ? window.location.origin : 'http://localhost:3001';
+    socket = io(serverUrl, {
       auth: { token },
     });
   }
