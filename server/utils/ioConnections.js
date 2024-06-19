@@ -124,7 +124,8 @@ const initializeSocket = (httpServer) => {
         game.state = {
           ...game.state,
           isInInitialSetup: true,
-          isInGame: false
+          isInGame: false,
+          numSeats: game.state.players.length
         }
 
         // save and update
@@ -459,7 +460,7 @@ const initializeSocket = (httpServer) => {
               if (port.value === '2:1O') player.ports.hasOre = true
             }
           })
-          
+
           game.state.settlements[id] = {
             ...game.state.settlements[id],
             color: player.color,

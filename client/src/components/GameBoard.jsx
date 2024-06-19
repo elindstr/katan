@@ -53,6 +53,7 @@ function App() {
 
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [haveRolled, setHaveRolled] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
   const [currentTurn, setCurrentTurn] = useState(false);
   
   const [robberStep, setRobberStep] = useState(null);
@@ -103,6 +104,7 @@ function App() {
 
       setSeats(updatedState.seats || Array(updatedState.numSeats).fill(null));
       setSeatsObject(updatedState.seatsObject || Array(updatedState.numSeats).fill({ username: null, socketId: null }));
+      setNumPlayers(updatedState.numSeats)
       setMessages(updatedState.messages);
       setHexes(updatedState.hexes);
       setPorts(updatedState.ports);
@@ -227,6 +229,11 @@ function App() {
     const socket = getSocket();
     socket.emit('handleAction', gameId, action, arg1);
 
+    // on start
+    if (action === 'Start Game') {
+      setGameStarted(true)
+    }
+
     // resets
     setCurrentMessage("")
     setInitialRoll(false)
@@ -336,6 +343,7 @@ function App() {
     <div className="app">
       <div className="main-column">
         <Seats 
+          gameStarted={gameStarted}
           numPlayers={numPlayers} 
           seatsObject={seatsObject} 
           handleSitDown={handleSitDown}
