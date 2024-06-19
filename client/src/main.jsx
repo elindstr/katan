@@ -1,4 +1,4 @@
-//main.jsx
+// client/main.jsx
 import ReactDOM from 'react-dom/client';
 import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
@@ -6,7 +6,7 @@ import App from './App';
 
 // Configure GraphQL HTTP Link
 const httpLink = createHttpLink({
-  uri: '/graphql',
+  uri: process.env.REACT_APP_API_URL || '/graphql',
 });
 
 // Configure context for token authentication

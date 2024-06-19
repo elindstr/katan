@@ -1,3 +1,4 @@
+//server.js
 require('dotenv').config();
 const express = require('express');
 const { ApolloServer } = require('@apollo/server');
@@ -29,10 +30,6 @@ const startApolloServer = async () => {
   app.use(express.json());
 
   // Serve static assets
-  app.use('/images', express.static(path.join(__dirname, '../client/images')));
-
-  app.use('/graphql', expressMiddleware(server));
-
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../client/dist')));
 
@@ -40,6 +37,8 @@ const startApolloServer = async () => {
       res.sendFile(path.join(__dirname, '../client/dist/index.html'));
     });
   }
+
+  app.use('/graphql', expressMiddleware(server));
 
   db.once('open', () => {
     httpServer.listen(PORT, () => {
