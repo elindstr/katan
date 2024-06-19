@@ -77,13 +77,23 @@ const initializeSocket = (httpServer) => {
 
     // Join Game
     socket.on('joinGame', async (gameId) => {
-      socket.join(gameId);
-      await sendSystemMessage(gameId, `${socket.username} joined the room`);
+      try {
+        const game = await Game.findById(gameId);
+        if (!game) {
+          socket.emit('error', 'Game not found');
+          return;
+        }
 
-      // Update room list
-      const sockets = await io.in(gameId).fetchSockets();
-      const roomUserList = sockets.map(s => s.username || 'anon');
-      io.in(gameId).emit('users', roomUserList);
+        socket.join(gameId);
+        await sendSystemMessage(gameId, `${socket.username} joined the room`);
+
+        const sockets = await io.in(gameId).fetchSockets();
+        const roomUserList = sockets.map(s => s.username || 'anon');
+        io.in(gameId).emit('users', roomUserList);
+      } catch (error) {
+        console.error('Error joining game:', error);
+        socket.emit('error', 'Error joining game');
+      }
     });
 
     // User Requests List of Games Available To Join
