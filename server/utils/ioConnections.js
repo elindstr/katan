@@ -410,6 +410,19 @@ const initializeSocket = (httpServer) => {
             color: player.color,
             username: player.username
           }
+
+          // check port status
+          game.state.ports.forEach(port => {
+            if (port.adjacentNodes.includes(id)) {
+              if (port.value === '3:1') player.ports.hasWild = true
+              if (port.value === '2:1B') player.ports.hasBrick = true
+              if (port.value === '2:1Wd') player.ports.hasWood = true
+              if (port.value === '2:1Wt') player.ports.hasWheat = true
+              if (port.value === '2:1S') player.ports.hasSheep = true
+              if (port.value === '2:1O') player.ports.hasOre = true
+            }
+          })
+
           // Subtract cost          
           if (!isFreeBuild) {
             player.inventory.wood -= 1
@@ -433,9 +446,20 @@ const initializeSocket = (httpServer) => {
               player.inventory[resourceType] += 1
             })
           }
-
           player.inventory.settlements -= 1
 
+          // check port status
+          game.state.ports.forEach(port => {
+            if (port.adjacentNodes.includes(id)) {
+              if (port.value === '3:1') player.ports.hasWild = true
+              if (port.value === '2:1B') player.ports.hasBrick = true
+              if (port.value === '2:1Wd') player.ports.hasWood = true
+              if (port.value === '2:1Wt') player.ports.hasWheat = true
+              if (port.value === '2:1S') player.ports.hasSheep = true
+              if (port.value === '2:1O') player.ports.hasOre = true
+            }
+          })
+          
           game.state.settlements[id] = {
             ...game.state.settlements[id],
             color: player.color,

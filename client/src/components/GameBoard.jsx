@@ -230,6 +230,7 @@ function App() {
     // resets
     setCurrentMessage("")
     setInitialRoll(false)
+    setIsTrading(false)
   };
 
   const handleBuildAction = (type, id) => {
@@ -377,6 +378,7 @@ function App() {
         ) : (
           !isTradingWithBank?
             <TradePanel 
+              username={username}
               userData={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }} 
               setIsTrading={setIsTrading}
               setIsTradingWithBank={setIsTradingWithBank}
@@ -385,13 +387,16 @@ function App() {
               handleTradeResponse={handleTradeResponse}
             />
           :
-            <TradeWithBankPanel 
-            userData={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }} 
-            setIsTrading={setIsTrading}
-            setIsTradingWithBank={setIsTradingWithBank}
-            handleTradeOffer={handleTradeOffer}
-            currentOffer={currentOffer}
-            bankTrade={bankTrade}
+            <TradeWithBankPanel
+              username={username}
+              userPorts={userData? userData.ports: {hasWood: false, hasBrick: false, hasLumber: false, hasSheep: false, hasWheat: false, hasOre: false, hasWild: false
+              }} 
+              userData={userData? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }} 
+              setIsTrading={setIsTrading}
+              setIsTradingWithBank={setIsTradingWithBank}
+              handleTradeOffer={handleTradeOffer}
+              currentOffer={currentOffer}
+              bankTrade={bankTrade}
             />
         )}
       </div>

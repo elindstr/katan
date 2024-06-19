@@ -1,6 +1,7 @@
+//TradeWithBankPanel.jsx
 import { useState, useEffect } from 'react';
 
-function TradeWithBankPanel({ userData, bankTrade, setIsTrading, setIsTradingWithBank }) {
+function TradeWithBankPanel({ username, userPorts, userData, bankTrade, setIsTrading, setIsTradingWithBank }) {
   const [offererGiving, setOffererGiving] = useState({
     wood: 0,
     brick: 0,
@@ -16,6 +17,14 @@ function TradeWithBankPanel({ userData, bankTrade, setIsTrading, setIsTradingWit
     ore: 0,
   });
   const [isValidTrade, setIsValidTrade] = useState(false);
+
+  const tradeRatios = {
+    wood: userPorts.hasWood ? 2 : userPorts.hasWild ? 3 : 4,
+    brick: userPorts.hasBrick ? 2 : userPorts.hasWild ? 3 : 4,
+    sheep: userPorts.hasSheep ? 2 : userPorts.hasWild ? 3 : 4,
+    wheat: userPorts.hasWheat ? 2 : userPorts.hasWild ? 3 : 4,
+    ore: userPorts.hasOre ? 2 : userPorts.hasWild ? 3 : 4,
+  };
 
   const updateGiving = (resource, amount) => {
     setOffererGiving(prev => {
@@ -44,9 +53,20 @@ function TradeWithBankPanel({ userData, bankTrade, setIsTrading, setIsTradingWit
   };
 
   const checkValidTrade = () => {
-    const givingTotal = Object.values(offererGiving).reduce((total, amount) => total + amount, 0);
-    const receivingTotal = Object.values(offererReceiving).reduce((total, amount) => total + amount, 0);
-    return givingTotal >= 4 && givingTotal % 4 === 0 && receivingTotal === givingTotal / 4;
+    let totalGivingValue = 0;
+    let totalReceivingValue = 0;
+  
+    ['wood', 'brick', 'sheep', 'wheat', 'ore'].forEach(resource => {
+      const ratio = tradeRatios[resource];
+      const givingAmount = offererGiving[resource];
+      const receivingAmount = offererReceiving[resource];
+  
+      totalGivingValue += givingAmount / ratio;
+      totalReceivingValue += receivingAmount;
+  
+      console.log(`checking ${resource}. Ratio: ${ratio}. Giving Amount: ${givingAmount}. Receiving Amount: ${receivingAmount}.`);
+    });
+    return totalGivingValue === totalReceivingValue;
   };
 
   useEffect(() => {
@@ -55,7 +75,7 @@ function TradeWithBankPanel({ userData, bankTrade, setIsTrading, setIsTradingWit
 
   const sendOffer = () => {
     const offer = {
-      offerer: userData.username,
+      offerer: username,
       offererGiving, 
       offererReceiving
     }
@@ -98,14 +118,14 @@ function TradeWithBankPanel({ userData, bankTrade, setIsTrading, setIsTradingWit
               {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
                 <td key={resource}>
                   <button 
-                    onClick={() => updateGiving(resource, inventory[resource] >= 4 ? -4 : -1)}
+                    onClick={() => updateGiving(resource, -tradeRatios[resource])}
                     disabled={offererGiving[resource] === 0}
                   >
                     -
                   </button>
                   {offererGiving[resource]}
                   <button 
-                    onClick={() => updateGiving(resource, inventory[resource] >= 4 ? 4 : 1)}
+                    onClick={() => updateGiving(resource, tradeRatios[resource])}
                     disabled={offererGiving[resource] >= inventory[resource]}
                   >
                     +

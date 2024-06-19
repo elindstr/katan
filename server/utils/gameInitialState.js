@@ -51,7 +51,6 @@ function playerGenerator () {
             cities: 4,
             wood: 0,
             brick: 0,
-            lumber: 0,
             sheep: 0,
             wheat: 0,
             ore: 0,
@@ -60,6 +59,15 @@ function playerGenerator () {
             yearOfPlenty: 0,
             monopoly: 0,
             victoryPoint: 0,
+        },
+        ports: {
+            hasWood: false,
+            hasBrick: false,
+            hasLumber: false,
+            hasSheep: false,
+            hasWheat: false,
+            hasOre: false,
+            hasWild: false
         },
         inventoryQueue: {
             knight: 0,

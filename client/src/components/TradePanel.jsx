@@ -1,7 +1,7 @@
 // TradePanel.jsx
 import { useState } from 'react';
 
-function TradePanel({ userData, handleTradeOffer, setIsTrading, setIsTradingWithBank, currentOffer, handleTradeResponse }) {
+function TradePanel({ username, userData, handleTradeOffer, setIsTrading, setIsTradingWithBank, currentOffer, handleTradeResponse }) {
   const [offererGiving, setOffererGiving] = useState({
     wood: 0,
     brick: 0,
@@ -45,7 +45,7 @@ function TradePanel({ userData, handleTradeOffer, setIsTrading, setIsTradingWith
 
   const sendOffer = () => {
     const offer = {
-      offerer: userData.username,
+      offerer: username,
       offererGiving, 
       offererReceiving
     }
