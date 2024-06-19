@@ -29,6 +29,7 @@ const Login = () => {
     e.preventDefault();
     try {
       if (isSignup) {
+
         // Check if username is already taken
         if (data && data.users.some(user => user.username === formState.username)) {
           alert('Username is already taken. Please choose another one.');
@@ -42,12 +43,15 @@ const Login = () => {
             lastName: formState.lastName
           }
         });
+        console.log("@46 Mutation response:", mutationResponse);
         const token = mutationResponse.data.addUser.token;
         Auth.login(token);
+        
       } else {
         const mutationResponse = await login({
           variables: { username: formState.username, password: formState.password }
         });
+        console.log("@54 Mutation response:", mutationResponse);
         const token = mutationResponse.data.login.token;
         Auth.login(token);
 
