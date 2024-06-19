@@ -752,6 +752,15 @@ const initializeSocket = (httpServer) => {
 
             // Leave room
             socket.leave(roomId);
+
+            // clean up room if empty
+            const room = io.sockets.adapter.rooms.get(roomId);
+            if (!room && !game.state.isInGame) {
+              game.state.isAlive = false
+              await game.markModified('state');
+              await game.save();
+            } 
+
           }
         }
       } catch (error) {

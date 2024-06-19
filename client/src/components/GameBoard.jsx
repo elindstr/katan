@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { initializeSocket, getSocket } from '../socket';
+import { useNavigate } from 'react-router-dom';
 import Auth from '../utils/auth';
 
 import Board from './Board';
@@ -13,6 +14,7 @@ import Dice from './Dice';
 import Options from './Options';
 
 function App() {
+  const navigate = useNavigate();
   const referralState = useLocation().state;
   const [gameId, setGameId] = useState([]);
   const [numPlayers, setNumPlayers] = useState(4);
@@ -328,6 +330,10 @@ function App() {
 
   const handleOptionChange = (option) => {
     // Logic to handle options drop down
+    console.log(option)
+    if(option==='leaveRoom') {
+      navigate('/dashboard')
+    }
   };
 
   useEffect(() => {
