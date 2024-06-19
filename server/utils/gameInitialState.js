@@ -61,6 +61,13 @@ function playerGenerator () {
             monopoly: 0,
             victoryPoint: 0,
         },
+        inventoryQueue: {
+            knight: 0,
+            roadBuilding: 0,
+            yearOfPlenty: 0,
+            monopoly: 0,
+            victoryPoint: 0,
+        },
         roadLength: 0,
         knightCount: 0,
         longestRoad: false,

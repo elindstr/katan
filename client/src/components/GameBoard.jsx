@@ -161,6 +161,12 @@ function App() {
       setRobberStep('robberSelectHex');
     });
 
+    socket.on('devCardSelected', (devCardSelected) => {
+      //console.log('devCardSelected:', devCardSelected);
+      alert(`You received a ${devCardSelected}! Non-point development cards will appear in your inventory at the end of your turn.`)
+    });
+    
+
     socket.on('sendOffer', (offer) => {
       setCurrentOffer(offer);
     });

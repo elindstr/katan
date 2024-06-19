@@ -189,9 +189,14 @@ const initializeSocket = (httpServer) => {
         if (devCardSelected === "Monopoly") devCardSelectedType = 'monopoly';
         if (devCardSelected === "Victory Point") devCardSelectedType = 'victoryPoint';
 
-        // Add to player's inventory
+        // Add to player's inventory queue
         const player = game.state.players.find(player => player.username === socket.username);
-        player.inventory[devCardSelectedType] += 1;
+
+        if (devCardSelectedType !== 'victoryPoint') {
+          player.inventoryQueue[devCardSelectedType] += 1;
+        } else {
+          player.inventory[devCardSelectedType] += 1;
+        }
 
         // Subtract cost
         player.inventory.wheat -= 1
@@ -205,6 +210,9 @@ const initializeSocket = (httpServer) => {
 
         // updates points
         await updatePoints(gameId)
+
+        // inform player of selection
+        io.to(player.socketId).emit('devCardSelected', devCardSelected);
 
       } else if (action === "Play Knight") {
         const game = await Game.findById(gameId);
@@ -317,7 +325,25 @@ const initializeSocket = (httpServer) => {
       } else if (action === "End Turn") {
         try {
           const game = await Game.findById(gameId);
-          
+          const player = game.state.players.find(player => player.username === socket.username);
+
+          // move inventory queue to inventory
+          if (player.inventoryQueue) {
+            Object.keys(player.inventoryQueue).forEach(resource => {
+              if (!player.inventory[resource]) {
+                player.inventory[resource] = 0;
+              }
+              player.inventory[resource] += player.inventoryQueue[resource];
+            });
+            player.inventoryQueue = {
+              'knight': 0,
+              'roadBuilding': 0,
+              'yearOfPlenty': 0,
+              'monopoly': 0,
+              'victoryPoint': 0,
+            }
+          }
+
           // get next next turn
           game.state.currentTurn = (game.state.currentTurn + 1) % game.state.players.length;
           
@@ -356,6 +382,7 @@ const initializeSocket = (httpServer) => {
             player.inventory.wood -= 1
             player.inventory.brick -= 1
           }
+          player.inventory.roads -= 1
 
           // update longestRoad
           const longestRoad = await calculateLongestRoad(game.state.roads, player.username)
@@ -368,11 +395,13 @@ const initializeSocket = (httpServer) => {
             color: player.color,
             username: player.username
           }
+          player.inventory.roads -= 1
 
           // update longestRoad
           const longestRoad = await calculateLongestRoad(game.state.roads, player.username)
           player.roadLength = longestRoad
         }
+
         if (type === "settlement") {
           await sendSystemMessage(gameId, `${socket.username} built a ${type}`);
 
@@ -388,6 +417,7 @@ const initializeSocket = (httpServer) => {
             player.inventory.sheep -= 1
             player.inventory.wheat -= 1
           }
+          player.inventory.settlements -= 1
           
         }
         if (type === "isInitialSettlement") {
@@ -403,6 +433,8 @@ const initializeSocket = (httpServer) => {
               player.inventory[resourceType] += 1
             })
           }
+
+          player.inventory.settlements -= 1
 
           game.state.settlements[id] = {
             ...game.state.settlements[id],
@@ -425,6 +457,8 @@ const initializeSocket = (httpServer) => {
             player.inventory.ore -= 3
             player.inventory.wheat -= 2
           }
+          player.inventory.settlements += 1
+          player.inventory.cities -= 1
         }
 
         // Save state and announce
