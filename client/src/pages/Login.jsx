@@ -43,7 +43,7 @@ const Login = () => {
             lastName: formState.lastName
           }
         });
-        console.log("@46 Mutation response:", mutationResponse);
+        // console.log("@46 Mutation response:", mutationResponse);
         const token = mutationResponse.data.addUser.token;
         Auth.login(token);
         
@@ -51,7 +51,7 @@ const Login = () => {
         const mutationResponse = await login({
           variables: { username: formState.username, password: formState.password }
         });
-        console.log("@54 Mutation response:", mutationResponse);
+        // console.log("@54 Mutation response:", mutationResponse);
         const token = mutationResponse.data.login.token;
         Auth.login(token);
 
