@@ -8,7 +8,7 @@ import BoardInventoryTracker from './BoardInventoryTracker';
 import BoardRoadArmyTracker from './BoardRoadArmyTracker';
 import BoardPointsTracker from './BoardPointsTracker';
 
-function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingRoad, isBuildingRoadOneOfTwo, isBuildingRoadTwoOfTwo, isInitialSettlementPlacement, isInitialRoadPlacement, isBuildingSettlement, isBuildingCity, userColor, inventoryResources, inventoryMaterials, userData, handleRobberHexClick, handleRobberPlayerClick}) {
+function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingRoad, isBuildingRoadOneOfTwo, isBuildingRoadTwoOfTwo, isInitialSettlementPlacement, isInitialRoadPlacement,isLastBuiltSettlement, isBuildingSettlement, isBuildingCity, inventoryResources, inventoryMaterials, userData, handleRobberHexClick, handleRobberPlayerClick}) {
   const [hexSize, setHexSize] = useState(0);
   const [boardStyle, setBoardStyle] = useState({});
 
@@ -20,7 +20,7 @@ function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingR
     let boardHeight = boardWidth * 0.8;
     if (boardHeight > 485) {
       boardHeight = 485;
-      boardWidth = boardHeight / 0.8;
+      boardWidth = boardHeight / 0.80;
     }
     const hexSize = boardWidth / 6;
 
@@ -80,9 +80,12 @@ function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingR
             isBuildingRoadOneOfTwo={isBuildingRoadOneOfTwo}
             isBuildingRoadTwoOfTwo={isBuildingRoadTwoOfTwo}
             isInitialRoadPlacement={isInitialRoadPlacement}
+            isLastBuiltSettlement={isLastBuiltSettlement}
             handleBuildAction={handleBuildAction}
             userColor={userData? userData.color: 'black'}
             dev={false}
+            settlements={settlements}
+            roads={roads}
           />
         ))}
 
@@ -103,6 +106,7 @@ function Board({hexes, ports, roads, settlements, handleBuildAction, isBuildingR
             userColor={userData? userData.color: 'black'}
             dev={false}
             handleRobberPlayerClick={handleRobberPlayerClick}
+            settlements={settlements}
           />
         ))}
 

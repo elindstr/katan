@@ -7,6 +7,7 @@ import Board from './Board';
 import Seats from './Seats';
 import UserPanel from './UserPanel';
 import TradePanel from './TradePanel';
+import TradeWithBankPanel from './TradeWithBankPanel';
 import Chat from './Chat';
 import Dice from './Dice';
 import Options from './Options';
@@ -37,6 +38,7 @@ function App() {
   const [isBuildingSettlement, setIsBuildingSettlement] = useState(false);
   const [isBuildingCity, setIsBuildingCity] = useState(false);
   const [isTrading, setIsTrading] = useState(false);
+  const [isTradingWithBank, setIsTradingWithBank] = useState(false);
   const [currentOffer, setCurrentOffer] = useState(null);
   const [isRollingDice, setIsRollingDice] = useState(false);
 
@@ -46,6 +48,7 @@ function App() {
   const [isInitialRoll, setInitialRoll] = useState(false);
   const [isInitialSettlementPlacement, setIsInitialSettlementPlacement] = useState(false);
   const [isInitialRoadPlacement, setIsInitialRoadPlacement] = useState(false);
+  const [isLastBuiltSettlement, setIsLastBuiltSettlement] = useState(null);
   const [isFreeBuild, setIsFreeBuild] = useState(true);
 
   const [isMyTurn, setIsMyTurn] = useState(false);
@@ -93,7 +96,6 @@ function App() {
     socket.on('placeSecondRoad', () => {
       setIsInitialRoadPlacement(true)
       setCurrentMessage("Place second road.")
-      //trigger road mutation rule (must be connected)
     })
 
     socket.on('stateUpdated', (updatedState) => {
@@ -113,8 +115,9 @@ function App() {
       setUserData(playerData);
 
       if (!updatedState.isInGame && 
-        !updatedState.isInInitialSetup
-        //in production: add condition that requires 3-4 players
+        !updatedState.isInInitialSetup && 
+        referralState.isHost
+        //todo: in production: add condition that requires 3-4 players
       ) {setDisplayStartButton(true)
       } else {setDisplayStartButton(false)}
       
@@ -224,6 +227,8 @@ function App() {
   };
 
   const handleBuildAction = (type, id) => {
+    console.log("building:", type, id, '. isInitialRoadPlacement:', isInitialRoadPlacement)
+
     const socket = getSocket();
 
     if (type === "isBuildingRoadOneOfTwo") {
@@ -240,6 +245,7 @@ function App() {
       setIsBuildingRoadTwoOfTwo(false);
   
     } else if (type === "isInitialRoad") {
+      console.log('here')
       const typeMutation = "isInitialRoad";
       socket.emit('handleBuildAction', gameId, typeMutation, id);
       setCurrentMessage('');
@@ -250,12 +256,14 @@ function App() {
       socket.emit('handleBuildAction', gameId, typeMutation, id);
       setCurrentMessage('');
       setIsInitialSettlementPlacement(false);
+      setIsLastBuiltSettlement(id)
 
     } else {
       setCurrentMessage('');
       setIsBuildingRoad(false);
       setIsBuildingSettlement(false);
       setIsBuildingCity(false);
+      
       socket.emit('handleBuildAction', gameId, type, id);
     }
   };
@@ -265,6 +273,12 @@ function App() {
     const socket = getSocket();
     socket.emit('makeOffer', gameId, offer);
   };
+  const bankTrade = (offer) => {
+    setIsTrading(false);
+    const socket = getSocket();
+    socket.emit('bankTrade', gameId, offer);
+  };
+  
 
   const handleTradeResponse = (response) => {
     if (response === 'accept') {
@@ -292,6 +306,14 @@ function App() {
       setCurrentMessage('');
     }
   };
+
+  const handleCancelBuild = () => {
+    setCurrentMessage('');
+    setIsBuildingRoad(false);
+    setIsBuildingSettlement(false);
+    setIsBuildingCity(false);
+  };
+  
 
   const handleOptionChange = (option) => {
     // Logic to handle options drop down
@@ -325,6 +347,7 @@ function App() {
           isBuildingCity={isBuildingCity}
           isInitialSettlementPlacement={isInitialSettlementPlacement}
           isInitialRoadPlacement={isInitialRoadPlacement}
+          isLastBuiltSettlement={isLastBuiltSettlement}
           userColor={userColor}
           inventoryResources={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }}
           inventoryMaterials={userData ? userData.inventory : { knight: 0, victoryPoint: 0, roadBuilding: 0, yearOfPlenty: 0, monopoly: 0, roads: 15, settlements: 5, cities: 4  }}
@@ -340,15 +363,30 @@ function App() {
             setIsTrading={setIsTrading} 
             isMyTurn={isMyTurn}
             haveRolled={haveRolled}
+            handleCancelBuild={handleCancelBuild}
+            isBuildingRoad={isBuildingRoad}
+            isBuildingSettlement={isBuildingSettlement} 
+            isBuildingCity={isBuildingCity}
           />
         ) : (
-          <TradePanel 
+          !isTradingWithBank?
+            <TradePanel 
+              userData={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }} 
+              setIsTrading={setIsTrading}
+              setIsTradingWithBank={setIsTradingWithBank}
+              handleTradeOffer={handleTradeOffer}
+              currentOffer={currentOffer}
+              handleTradeResponse={handleTradeResponse}
+            />
+          :
+            <TradeWithBankPanel 
             userData={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }} 
             setIsTrading={setIsTrading}
+            setIsTradingWithBank={setIsTradingWithBank}
             handleTradeOffer={handleTradeOffer}
             currentOffer={currentOffer}
-            handleTradeResponse={handleTradeResponse}
-          />
+            bankTrade={bankTrade}
+            />
         )}
       </div>
       <div className="side-column">

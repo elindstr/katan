@@ -1,8 +1,6 @@
 // Road.jsx
 
-//todo: regulate road building as connected to road except on initial build
-
-function Road({ id, x, y, orient, hexSize, color, userColor, isBuildingRoad, isBuildingRoadOneOfTwo, isBuildingRoadTwoOfTwo, isInitialRoadPlacement, handleBuildAction, dev }) {
+function Road({ id, x, y, orient, hexSize, color, userColor, isBuildingRoad, isBuildingRoadOneOfTwo, isBuildingRoadTwoOfTwo, isInitialRoadPlacement, isLastBuiltSettlement, handleBuildAction, settlements, roads, dev }) {
   let path;
   if (orient === 2) {
     path = `
@@ -64,7 +62,6 @@ function Road({ id, x, y, orient, hexSize, color, userColor, isBuildingRoad, isB
     height: `${hexSize}px`
   };
 
-
   const handleBuildingRoadOneOfTwo = (type, id) => {
     handleBuildAction('isBuildingRoadOneOfTwo', id)
   }
@@ -75,11 +72,30 @@ function Road({ id, x, y, orient, hexSize, color, userColor, isBuildingRoad, isB
     handleBuildAction('isInitialRoad', id)
   }
 
-
+  const canBuildRoad = () => {
+    const myAdjacentSettlements = settlements.filter(settlement => 
+      settlement.adjacentRoads.includes(id) && settlement.color === userColor
+    );
+    const myRoads = roads.filter(road => road.color === userColor);
+    const myReachableRoads = myRoads.reduce((acc, road) => {
+      return acc.concat(road.adjacentRoadsLeft, road.adjacentRoadsRight);
+    }, []);
+    myAdjacentSettlements.forEach(settlement => {
+      myReachableRoads.push(...settlement.adjacentRoads);
+    });
+    return myReachableRoads.includes(id);
+  };
+  const canBuildInitialRoad = () => {
+    const myReachableRoads = settlements[isLastBuiltSettlement].adjacentRoads;
+    return myReachableRoads.includes(id);
+  };
+  
+  // returns
   if (color) {
     return <div className="road" style={style}></div>
   }
-  if (isBuildingRoad) {
+
+  if (isBuildingRoad && canBuildRoad()) {
     return (
           <div 
               className="road hover-display" 
@@ -87,7 +103,7 @@ function Road({ id, x, y, orient, hexSize, color, userColor, isBuildingRoad, isB
               onClick={() => handleBuildAction('road', id)}
           ></div>
   )}
-  if (isBuildingRoadOneOfTwo) {
+  if (isBuildingRoadOneOfTwo && canBuildRoad()) {
     return (
           <div 
               className="road hover-display" 
@@ -95,7 +111,7 @@ function Road({ id, x, y, orient, hexSize, color, userColor, isBuildingRoad, isB
               onClick={() => handleBuildingRoadOneOfTwo('road', id)}
           ></div>
   )}
-  if (isBuildingRoadTwoOfTwo) {
+  if (isBuildingRoadTwoOfTwo && canBuildRoad()) {
     return (
           <div 
               className="road hover-display" 
@@ -103,7 +119,7 @@ function Road({ id, x, y, orient, hexSize, color, userColor, isBuildingRoad, isB
               onClick={() => handleBuildingRoadTwoOfTwo('road', id)}
           ></div>
   )}
-  if (isInitialRoadPlacement) {
+  if (isInitialRoadPlacement && canBuildInitialRoad()) {
     return (
           <div 
               className="road hover-display" 

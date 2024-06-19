@@ -3,8 +3,6 @@ const { Game, Trade } = require('../models');
 const socketAuth = require('./socketAuth');
 const { gameInitialState, playerGenerator } = require('./gameInitialState');
 
-// todo: (1) implement initial building sequence; (2) turn management
-
 const initializeSocket = (httpServer) => {
   const io = new Server(httpServer, {
     cors: {
@@ -345,7 +343,7 @@ const initializeSocket = (httpServer) => {
         const player = game.state.players.find(player => player.username === socket.username);
         
         // update board
-        if (type == "road") {
+        if (type === "road") {
           await sendSystemMessage(gameId, `${socket.username} built a ${type}`);
 
           game.state.roads[id] = {
@@ -363,7 +361,8 @@ const initializeSocket = (httpServer) => {
           const longestRoad = await calculateLongestRoad(game.state.roads, player.username)
           player.roadLength = longestRoad
         }
-        if (type == "isInitialRoad") {
+        if (type === "isInitialRoad") {
+          // console.log(gameId, `${socket.username} built a ${type}`);
           game.state.roads[id] = {
             ...game.state.roads[id],
             color: player.color,
@@ -374,7 +373,7 @@ const initializeSocket = (httpServer) => {
           const longestRoad = await calculateLongestRoad(game.state.roads, player.username)
           player.roadLength = longestRoad
         }
-        if (type == "settlement") {
+        if (type === "settlement") {
           await sendSystemMessage(gameId, `${socket.username} built a ${type}`);
 
           game.state.settlements[id] = {
@@ -391,16 +390,30 @@ const initializeSocket = (httpServer) => {
           }
           
         }
-        if (type == "isInitialSettlement") {
+        if (type === "isInitialSettlement") {
+          // console.log(gameId, `${socket.username} built a ${type}`);
+
+          // track second settlement status and reward resources
+          const settlementCount = game.state.settlements.filter(settlement => settlement.username === player.username).length;
+
+          if (settlementCount === 1) {
+            const adjacentHexes = game.state.hexes.filter(hex => hex.adjacentNodes.includes(id))
+            adjacentHexes.forEach(hex => {
+              const resourceType = hex.resource
+              player.inventory[resourceType] += 1
+            })
+          }
+
           game.state.settlements[id] = {
             ...game.state.settlements[id],
             color: player.color,
             username: player.username
           }
+
         }
-        if (type == "city") {
+        if (type === "city") {
           await sendSystemMessage(gameId, `${socket.username} built a ${type}`);
-          
+
           game.state.settlements[id] = {
             ...game.state.settlements[id],
             color: player.color,
@@ -423,7 +436,7 @@ const initializeSocket = (httpServer) => {
         await updatePoints(gameId)
 
         // handle initial placement routing
-        if ( (type == 'isInitialRoad') || (type = 'isInitialSettlement')) {
+        if ( (type === 'isInitialRoad') || (type === 'isInitialSettlement')) {
           routingInitialPlacements(gameId)
         }
 
@@ -440,7 +453,7 @@ const initializeSocket = (httpServer) => {
       try {
         // Fetch the game from the database
         const game = await Game.findById(gameId);
-        console.log(game.state.players);
+        // console.log(game.state.players);
     
         let highestRoll = 0;
         let highestPlayerIndex = 0;
@@ -460,7 +473,7 @@ const initializeSocket = (httpServer) => {
     
         // If not all players have rolled, exit the function
         if (!allPlayersRolled) {
-          return;
+          return; 
         }
     
         // Assign turn orders starting from the highest rolling player
@@ -468,7 +481,7 @@ const initializeSocket = (httpServer) => {
         let currentIndex = highestPlayerIndex;
     
         do {
-          console.log(currentIndex);
+          // console.log(currentIndex);
           game.state.players[currentIndex].turnOrder = turnOrder;
           turnOrder++;
           currentIndex = (currentIndex + 1) % game.state.players.length;
@@ -505,7 +518,7 @@ const initializeSocket = (httpServer) => {
         const player = game.state.players[p] 
         if (countPlayerSettlements(player) == 0) {
           io.to(player.socketId).emit('placeFirstSettlement');
-          console.log(countPlayerSettlements(player))
+          // console.log(countPlayerSettlements(player))
           return
         }
         if (countPlayerRoads(player) == 0) {
@@ -589,12 +602,52 @@ const initializeSocket = (httpServer) => {
         game.markModified('state');
         const updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
-        await sendSystemMessage(gameId, `${socket.username} accepted ${offer.offerer}'s offer.`);
+
+        const givingString = convertOfferToString(offer.offererGiving);
+        const receivingString = convertOfferToString(offer.offererReceiving);
+        await sendSystemMessage(gameId, `${socket.username} accepted ${offer.offerer}'s offer: ${givingString} for ${receivingString}`);
 
       } catch (error) {
         console.error('Error accepting trade:', error);
       }
     });
+
+    socket.on('bankTrade', async (gameId, offer) => {
+      console.log('offer:', offer)
+      console.log(`${socket.username} made a bank trade offer.`)
+      try {
+
+        // implement trade
+        const game = await Game.findById(gameId);
+        const offerer = game.state.players.find(player => player.username === socket.username);
+
+        // Update inventories based on the trade offer
+        Object.entries(offer.offererGiving).forEach(([resource, amount]) => {
+          offerer.inventory[resource] -= amount;
+        });
+        Object.entries(offer.offererReceiving).forEach(([resource, amount]) => {
+          offerer.inventory[resource] += amount;
+        });
+        
+        // update
+        game.markModified('state');
+        const updatedGame = await game.save();
+        io.to(gameId).emit('stateUpdated', updatedGame.state);
+
+        const givingString = convertOfferToString(offer.offererGiving);
+        const receivingString = convertOfferToString(offer.offererReceiving);
+        await sendSystemMessage(gameId, `${socket.username} traded with the bank: ${givingString} for ${receivingString}`);
+
+      } catch (error) {
+        console.error('Error accepting trade:', error);
+      }
+    });
+    const convertOfferToString = (offer) => {
+      return '{ ' + Object.entries(offer)
+        .filter(([key, value]) => value > 0)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(', ') + ' }';
+    };
 
     // User Posts Update(s) to Game State
     socket.on('updateGameState', async (gameId, updates) => {

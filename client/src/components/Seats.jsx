@@ -5,9 +5,10 @@ function Seats({ numPlayers, seatsObject, handleSitDown, currentTurn }) {
   }
 
   return (
-    <div className="seats" style={currentTurn? currentTurnStyle: null}>
+    <div className="seats">
       {seatsObject.slice(0, numPlayers).map((seat, index) => (
         <button
+          style={(currentTurn == index)? currentTurnStyle: null}
           key={index}
           className="seat"
           onClick={() => handleSitDown(index)}

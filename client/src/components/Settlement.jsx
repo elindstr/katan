@@ -2,7 +2,7 @@
 
 //todo: regulate settlement building within 1 node away; and must be connected to road except on initial build 
 
-function Settlement({ id, x, y, hexSize, isCity, username, color, userColor, isBuildingSettlement, isBuildingCity, isInitialSettlementPlacement, handleBuildAction, dev, handleRobberPlayerClick }) {
+function Settlement({ id, x, y, hexSize, isCity, username, color, userColor, isBuildingSettlement, isBuildingCity, isInitialSettlementPlacement, handleBuildAction, dev, handleRobberPlayerClick, settlements }) {
   
   const size = hexSize * 0.2;
   const settlementStyle = {
@@ -41,6 +41,23 @@ function Settlement({ id, x, y, hexSize, isCity, username, color, userColor, isB
     handleBuildAction('isInitialSettlement', id)
   }
 
+  const isTwoNodesAway = () => {
+    //check that settlement[id] does not share an .adjacentRoads with any previously built settlement
+    const currentAdjacentRoads = settlements[id].adjacentRoads;
+    let isTwoNodesAway = true;
+    settlements.forEach(settlement => {
+      if (settlement.username) {
+        settlement.adjacentRoads.forEach(road => {
+          if (currentAdjacentRoads.includes(road)) {
+            isTwoNodesAway = false;
+          }
+        });
+      }
+    });
+    return isTwoNodesAway;
+  };
+
+
   if (isBuildingCity && color) {
     return (<>
       <div 
@@ -59,14 +76,14 @@ function Settlement({ id, x, y, hexSize, isCity, username, color, userColor, isB
     return <div className="settlement" style={ isCity? cityStyle: settlementStyle } onClick={() => handleRobberPlayerClick(username, id)}></div>
   }
 
-  if (isBuildingSettlement) {
+  if (isBuildingSettlement && isTwoNodesAway()) {
     return <div 
               className="settlement hover-display" 
               style={settlementHoverStyle}
               onClick={() => handleBuildAction('settlement', id)}
           ></div>;
   }
-  if (isInitialSettlementPlacement) {
+  if (isInitialSettlementPlacement && isTwoNodesAway()) {
     return <div 
               className="settlement hover-display" 
               style={settlementHoverStyle}

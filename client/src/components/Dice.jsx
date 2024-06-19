@@ -29,7 +29,7 @@ function Dice({ dice, handleDiceAction, isInitialRoll, haveRolled, displayStartB
           () => handleDiceAction('Initial Roll')
         }>Roll Dice</button>}
 
-        {isMyTurn && 
+        {isMyTurn && haveRolled && 
         <button onClick={() => handleDiceAction('End Turn')}>End Turn</button>}
         
       </div>

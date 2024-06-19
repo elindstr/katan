@@ -1,7 +1,6 @@
-// TradePanel.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-function TradePanel({ userData, handleTradeOffer, setIsTrading, setIsTradingWithBank, currentOffer, handleTradeResponse }) {
+function TradeWithBankPanel({ userData, bankTrade, setIsTrading, setIsTradingWithBank }) {
   const [offererGiving, setOffererGiving] = useState({
     wood: 0,
     brick: 0,
@@ -16,6 +15,7 @@ function TradePanel({ userData, handleTradeOffer, setIsTrading, setIsTradingWith
     wheat: 0,
     ore: 0,
   });
+  const [isValidTrade, setIsValidTrade] = useState(false);
 
   const updateGiving = (resource, amount) => {
     setOffererGiving(prev => {
@@ -43,19 +43,23 @@ function TradePanel({ userData, handleTradeOffer, setIsTrading, setIsTradingWith
     });
   };
 
+  const checkValidTrade = () => {
+    const givingTotal = Object.values(offererGiving).reduce((total, amount) => total + amount, 0);
+    const receivingTotal = Object.values(offererReceiving).reduce((total, amount) => total + amount, 0);
+    return givingTotal >= 4 && givingTotal % 4 === 0 && receivingTotal === givingTotal / 4;
+  };
+
+  useEffect(() => {
+    setIsValidTrade(checkValidTrade());
+  }, [offererGiving, offererReceiving]);
+
   const sendOffer = () => {
     const offer = {
       offerer: userData.username,
       offererGiving, 
       offererReceiving
     }
-    handleTradeOffer(offer);
-  };
-
-  const canAcceptOffer = () => {
-    return ['wood', 'brick', 'sheep', 'wheat', 'ore'].every(resource => {
-      return inventory[resource] + currentOffer.offererGiving[resource] >= currentOffer.offererReceiving[resource];
-    });
+    bankTrade(offer);
   };
 
   if (!userData) {
@@ -75,65 +79,9 @@ function TradePanel({ userData, handleTradeOffer, setIsTrading, setIsTradingWith
     monopoly: 0,
   };
 
-  if (currentOffer) {
-    return (
-      <div className="trade-panel">
-        <h4>Incoming Offer</h4>
-        <div className="trade-panel-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Resource</th>
-                {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
-                  <th key={resource}>{resource.charAt(0).toUpperCase() + resource.slice(1)}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Offering</td>
-                {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
-                  <td key={resource}>
-                    {currentOffer.offererGiving[resource]}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td>For</td>
-                {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
-                  <td key={resource}>
-                    {currentOffer.offererReceiving[resource]}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td>Your Total</td>
-                {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
-                  <td key={resource}>
-                    {inventory[resource] + currentOffer.offererGiving[resource] - currentOffer.offererReceiving[resource]}
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-          <div className="trade-actions">
-            <button 
-              onClick={() => handleTradeResponse('accept')} 
-              disabled={!canAcceptOffer()}
-              style={!canAcceptOffer() ? { color: 'grey' } : null}
-            >
-              Accept
-            </button>
-            <button onClick={() => handleTradeResponse('decline')}>Decline</button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="trade-panel">
-      <h4>Trade Offer</h4>
+      <h4>Bank Trade</h4>
       <div className="trade-panel-container">
         <table>
           <thead>
@@ -150,14 +98,14 @@ function TradePanel({ userData, handleTradeOffer, setIsTrading, setIsTradingWith
               {['wood', 'brick', 'sheep', 'wheat', 'ore'].map(resource => (
                 <td key={resource}>
                   <button 
-                    onClick={() => updateGiving(resource, -1)}
+                    onClick={() => updateGiving(resource, inventory[resource] >= 4 ? -4 : -1)}
                     disabled={offererGiving[resource] === 0}
                   >
                     -
                   </button>
                   {offererGiving[resource]}
                   <button 
-                    onClick={() => updateGiving(resource, 1)}
+                    onClick={() => updateGiving(resource, inventory[resource] >= 4 ? 4 : 1)}
                     disabled={offererGiving[resource] >= inventory[resource]}
                   >
                     +
@@ -194,9 +142,10 @@ function TradePanel({ userData, handleTradeOffer, setIsTrading, setIsTradingWith
             </tr>
           </tbody>
         </table>
+
         <div className="trade-actions">
-          <button onClick={sendOffer}>Send Offer</button>
-          <button onClick={() => setIsTradingWithBank(true)}>Trade With Bank</button>
+          <button onClick={sendOffer} disabled={!isValidTrade}>Execute Trade</button>
+          <button onClick={() => setIsTradingWithBank(false)}>Trade With Settlers</button>
           <button onClick={() => setIsTrading(false)}>Cancel</button>
         </div>
       </div>
@@ -204,6 +153,4 @@ function TradePanel({ userData, handleTradeOffer, setIsTrading, setIsTradingWith
   );
 }
 
-export default TradePanel;
-
-
+export default TradeWithBankPanel;

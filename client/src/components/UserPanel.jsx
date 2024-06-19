@@ -1,7 +1,7 @@
 // UserPanel.jsx
 import { useState, useEffect } from 'react';
 
-function UserPanel({ currentMessage, userData, handleAction, setIsTrading, isMyTurn, haveRolled }) {
+function UserPanel({ currentMessage, userData, handleAction, setIsTrading, isMyTurn, haveRolled, handleCancelBuild, isBuildingRoad, isBuildingSettlement, isBuildingCity }) {
 
   const [isPlayingYearofPlenty, setIsPlayingYearofPlenty] = useState(false);
   const [isPlayingMonopoly, setIsPlayingMonopoly] = useState(false);
@@ -96,13 +96,19 @@ function UserPanel({ currentMessage, userData, handleAction, setIsTrading, isMyT
       <div className="actions">
 
         {currentMessage &&
-          <div>{currentMessage}</div>
+          <div className="current-message">{currentMessage}</div>
+        }
+        {(isBuildingRoad || isBuildingSettlement || isBuildingCity) && 
+          <div className="actions-cancel">
+            <button onClick={handleCancelBuild}>Cancel</button>
+          </div>
         }
 
         {!currentMessage && isMyTurn && haveRolled && !isPlayingMonopoly && !isPlayingYearofPlenty &&
             <>
             <h4>Actions</h4>
             <div className="actions-grid">
+            <button onClick={() => setIsTrading(true)}>Trade</button>
               <div className="hover-container">
                 <button 
                   onClick={() => handleAction('Build Road')}
@@ -143,7 +149,6 @@ function UserPanel({ currentMessage, userData, handleAction, setIsTrading, isMyT
                   <span className="hover-popup">{resourceCosts.developmentCard}</span>
                 )}
               </div>
-              <button onClick={() => setIsTrading(true)}>Trade</button>
             </div>
           </>
         }

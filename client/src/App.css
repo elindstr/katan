@@ -319,6 +319,11 @@ flex-direction: row;
 /* user-panel */
 
 /* user-panel */
+.current-message {
+  font-size: 1.5em;
+  font-weight: bold;
+  text-align: center;
+}
 .user-panel {
   display: flex;
   flex-direction: column;
@@ -369,6 +374,15 @@ flex-direction: row;
   font-size: 0.8em;
   padding: 5px;
   width: 100%;
+}
+.actions-cancel {
+  display: flex;
+  justify-content: center;
+}
+.actions-cancel button {
+  font-size: 0.8em;
+  padding: 5px;
+  width: 200px
 }
 @media (min-width: 600px) {
   .user-panel {
