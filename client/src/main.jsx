@@ -6,7 +6,8 @@ import App from './App';
 
 // Configure GraphQL HTTP Link
 const httpLink = createHttpLink({
-  uri: process.env.REACT_APP_API_URL || '/graphql',
+  // uri: process.env.REACT_APP_API_URL || '/graphql',
+  uri: import.meta.env.REACT_APP_API_URL || '/graphql',
 });
 
 // Configure context for token authentication

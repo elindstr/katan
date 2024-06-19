@@ -193,6 +193,9 @@ border: 1px solid #000;
 margin: 10px;
 padding: 10px;
 }
+.options {
+  width: 90%; 
+}
 .seats {
 display: flex;
 flex-direction: row;
@@ -265,6 +268,7 @@ margin: 10px;
 position: relative;
 max-height: 485px;
 }
+
 .hex-inner {
 display: flex;
 justify-content: center;
@@ -294,7 +298,6 @@ opacity: 0;
 .hover-display:hover {
 opacity: 1;
 }
-
 .dice-container button {
 margin: 2px;
 padding: 1px
@@ -340,7 +343,6 @@ flex-direction: row;
   overflow-y: auto;
   height: 100%;
 }
-
 .current-message {
   margin-bottom: 10px;
 }
@@ -510,8 +512,6 @@ flex-direction: row;
   visibility: visible;
 }
 
-
-
 /* On Board Inventory Displays */
 .resources-inventory {
 position: absolute;
@@ -581,4 +581,27 @@ margin: 0 0 0 0;
 }
 .award {
 background-color: greenyellow;
+}
+
+
+@media (max-width: 500px) {
+  * {
+    height: auto;
+  }
+  .main-column {
+    width: 75vw;
+    }
+  .side-column {
+    width: 25vw;
+  }
+  .board-container {
+    padding: 10px
+  }
+  .board-container, .chat, .dice-container,.user-panel, .seats {
+    margin: 1px;
+  }
+  .resources-inventory, .inventory-summary, .points-tracker, .army-road-tracker, .seats, .options, .chat {
+    font-size: 0.6em;
+    padding: 1px;
+  }
 }

@@ -4,7 +4,7 @@ function Options({ handleOptionChange }) {
     <div className="options">
       <select onChange={(e) => handleOptionChange(e.target.value)}>
         <option value="">Options</option>
-        <option value="leaveRoom">Leave Room</option>
+        <option value="leaveRoom">Leave</option>
       </select>
     </div>
   );
