@@ -1,12 +1,8 @@
 //main.jsx
 import ReactDOM from 'react-dom/client';
-import { Provider } from 'react-redux';
 import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
-import { configureStore } from '@reduxjs/toolkit';
 import App from './App';
-import reducers from './reducers';
-// import './index.css'
 
 // Configure GraphQL HTTP Link
 const httpLink = createHttpLink({
@@ -30,15 +26,8 @@ const client = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
-// Configure Redux Store
-const store = configureStore({
-  reducer: reducers,
-});
-
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <Provider store={store}>
-    <ApolloProvider client={client}>
-      <App />
-    </ApolloProvider>
-  </Provider>
+  <ApolloProvider client={client}>
+    <App />
+  </ApolloProvider>
 );

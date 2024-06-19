@@ -100,7 +100,7 @@ function App() {
     })
 
     socket.on('stateUpdated', (updatedState) => {
-      console.log('State updated:', updatedState);
+      console.log('State updated:', updatedState); //dev
 
       setSeats(updatedState.seats || Array(updatedState.numSeats).fill(null));
       setSeatsObject(updatedState.seatsObject || Array(updatedState.numSeats).fill({ username: null, socketId: null }));
@@ -158,7 +158,7 @@ function App() {
     });
 
     socket.on('robberAuth', () => {
-      console.log('robberAuth');
+      // console.log('robberAuth');
       setCurrentMessage('Select Hex to Move Robber');
       setRobberStep('robberSelectHex');
     });
@@ -174,7 +174,7 @@ function App() {
     });
 
     socket.on('endGame', () => {
-      console.log("game over");
+      // console.log("game over");
       setCurrentMessage("game over");
     });
 
@@ -204,7 +204,7 @@ function App() {
         seatsObject: seatsObject.map((seat, idx) => (idx === index ? { username, socketId } : seat))
       });
     } else {
-      console.log('You are already seated.');
+      // console.log('You are already seated.');
     }
   };
 
@@ -241,8 +241,6 @@ function App() {
   };
 
   const handleBuildAction = (type, id) => {
-    console.log("building:", type, id, '. isInitialRoadPlacement:', isInitialRoadPlacement)
-
     const socket = getSocket();
 
     if (type === "isBuildingRoadOneOfTwo") {
@@ -259,7 +257,6 @@ function App() {
       setIsBuildingRoadTwoOfTwo(false);
   
     } else if (type === "isInitialRoad") {
-      console.log('here')
       const typeMutation = "isInitialRoad";
       socket.emit('handleBuildAction', gameId, typeMutation, id);
       setCurrentMessage('');
