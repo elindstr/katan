@@ -447,7 +447,7 @@ flex-direction: row;
 }
 .trade-actions {
   display: flex;
-  flex-direction: column;
+  /* flex-direction: column; */
   padding: 3px;
   margin: 3px;
   justify-content: center;
@@ -471,6 +471,26 @@ flex-direction: row;
     width: 150px;
     padding: 3px;
     margin: 3px;
+  }
+}
+@media (max-width: 600px) {
+  .trade-panel-container, .trade-actions {
+    font-size: .7em;
+  }
+  .trade-actions button{
+    font-size: .5em;
+  }
+}
+@media (max-width: 460px) {
+  .trade-panel-container {
+    font-size: .4em;
+    padding: 0px;
+    margin: 0px
+  }
+  .trade-actions button, .trade-panel th, .trade-panel td {
+    font-size: .3em;
+    padding: 0px;
+    margin: 0px
   }
 }
 /* YearofPlenty */

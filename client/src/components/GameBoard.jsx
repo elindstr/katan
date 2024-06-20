@@ -62,6 +62,8 @@ const App = () => {
   const [robberStep, setRobberStep] = useState(null);
   const [robberHexTarget, setRobberHexTarget] = useState(null);
   const [robberPlayerTarget, setRobberPlayerTarget] = useState(null);
+  const [knightIsLocked, setKnightIsLocked] = useState(false);
+  const [isGameOver, setIsGameOver] = useState(false);
 
   useEffect(() => {
     const token = Auth.getToken();
@@ -182,6 +184,7 @@ const App = () => {
 
     socket.on('endGame', () => {
       setCurrentMessage("game over");
+      setIsGameOver(true)
     });
 
     return () => {
@@ -235,6 +238,13 @@ const App = () => {
 
     if (action === 'Start Game') {
       setGameStarted(true);
+    }
+
+    if (action === 'Play Knight') {
+      setKnightIsLocked(true)
+    }
+    if (action === 'End Turn') {
+      setKnightIsLocked(false)
     }
 
     setCurrentMessage('');
@@ -468,6 +478,7 @@ const App = () => {
           isMyTurn={isMyTurn}
           isHandlingSeven={isHandlingSeven}
           robberStep={robberStep}
+          isGameOver={isGameOver}
         />
       </div>
     </div>
