@@ -71,20 +71,14 @@ function Port({ x, y, orient, hexSize, value }) {
     width: `${hexSize}px`,
     height: `${hexSize}px`,
     position: 'absolute',
-    color: 'black',
-    fontSize: '1rem',
-
-    display: 'flex',
     justifyContent: `${justify}`,
     alignItems: `${align}`,
-    overflow: 'visible',
-    padding: '20px'
   };
 
   return (
     <>
       <div className="port" style={style}></div>
-      <div style={textStyle}>{value}</div>
+      <div className="port-text" style={textStyle}>{value}</div>
     </>
   );}
 

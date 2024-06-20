@@ -22,7 +22,7 @@ function Chat({ users, messages, handleSendMessage, handleKeyPress, setMessage, 
   return (
     <div className="chat">
       <div className="chat-users">
-        <h3>Current Users</h3>
+        <h3>Users</h3>
         <ul>
           {users.map((user, index) => (
             <li key={index}>{user}</li>
@@ -30,7 +30,7 @@ function Chat({ users, messages, handleSendMessage, handleKeyPress, setMessage, 
         </ul>
       </div>
       <div className="chat-messages">
-        <h3>Chat Messages</h3>
+        <h3>Chat</h3>
         <div className="messages-container">
           {messages.map((msg, index) => (
             <div key={index} className="message" style={msg.type?systemStyle: null}>
@@ -45,7 +45,7 @@ function Chat({ users, messages, handleSendMessage, handleKeyPress, setMessage, 
           type="text" 
           value={message} 
           onChange={(e) => setMessage(e.target.value)} 
-          placeholder="Enter message"
+          placeholder="type message"
           onKeyPress={handleKeyPress}
         />
         <button onClick={sendMessage}>Send</button>

@@ -32,15 +32,11 @@ function Hex({ hex, hexSize, dev, handleRobberHexClick }) {
       1% 26%
     )`
   };
-  const robberStyle = {
-    color: 'black',
-    fontSize: '40px',
-  }
 
   return (
     <div className="hex" style={style}>
       <div className="hex-inner" onClick={() => handleRobberHexClick(hex.id)}>
-        {value} {hasRobber? <span style={robberStyle}>&#9823;</span>: null}
+        {value} {hasRobber? <span className="robber">&#9823;</span>: null}
       </div>
     </div>
   );

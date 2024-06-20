@@ -254,19 +254,31 @@ border-top: 1px solid #000;
 flex: 1;
 padding: 5px;
 margin-bottom: 3px;
+font-size: .8em;
+}
+.chat-input button {
+  padding: 5px 10px;
 }
 
-.chat-input button {
-padding: 5px 10px;
+@media (max-width: 570px) {
+  .chat-input input {
+    font-size: 0.6em;
+  }
+  .chat-input button {
+    font-size: .8em
+  }
 }
 
 /* Game Board */
 .board-container {
-background-color: #ddd;
-border: 1px solid #000;
-margin: 10px;
-position: relative;
-max-height: 485px;
+  background-color: #ddd;
+  border: 1px solid #000;
+  margin: 10px;
+  position: relative;
+  align-content: center;
+  align-items: center;
+  align-self: center;
+  justify-content: center;
 }
 
 .hex-inner {
@@ -512,7 +524,55 @@ flex-direction: row;
   visibility: visible;
 }
 
+.robber {
+  color: black;
+  font-size: 2.5em;
+}
+@media (max-width: 600px) {
+  .robber {
+    font-size: 1.5em;
+  }
+}
+
+.port-text{
+  color: black;
+  font-size: 1em;
+  display: flex;
+  overflow: visible;
+  padding: 20px;
+  font-size: 1em;
+}
+@media (max-width: 600px) {
+  .port-text {
+    font-size: .8em;
+  }
+}
+@media (max-width: 600px) {
+  .port-text {
+    font-size: .8em;
+  }
+}
+@media (max-width: 530px) {
+  .port-text {
+    font-size: .7em;
+  }
+}
+
 /* On Board Inventory Displays */
+.resources-inventory, .inventory-summary, .points-tracker, .army-road-tracker {
+  font-size: 0.7em;
+}
+@media (min-width: 650px) {
+  .resources-inventory, .inventory-summary, .points-tracker, .army-road-tracker {
+    font-size: 0.8em;
+  }
+}
+@media (max-width: 530px) {
+  .resources-inventory, .inventory-summary, .points-tracker, .army-road-tracker {
+    font-size: 0.6em;
+  }
+}
+
 .resources-inventory {
 position: absolute;
 display: flex;
@@ -522,7 +582,7 @@ left: 3px;
 background-color: rgba(255, 255, 255, 0.8);
 padding: 3px;
 border-radius: 5px;
-font-size: 0.7em;
+
 }
 .resources-inventory h4 {
 margin: 0 0 0 0;
@@ -549,7 +609,6 @@ left: 3px;
 background-color: rgba(255, 255, 255, 0.8);
 padding: 3px;
 border-radius: 5px;
-font-size: 0.7em;
 }
 .inventory-summary h4 {
 margin: 0 0 0 0;
@@ -561,7 +620,6 @@ right: 3px;
 background-color: rgba(255, 255, 255, 0.8);
 padding: 3px;
 border-radius: 5px;
-font-size: 0.7em;
 }
 .army-road-tracker {
 position: absolute;
@@ -570,7 +628,6 @@ right: 3px;
 background-color: rgba(255, 255, 255, 0.8);
 padding: 3px;
 border-radius: 5px;
-font-size: 0.7em;
 text-align: right;
 }
 .army-road-tracker h4, .points-tracker h4 {
@@ -583,7 +640,13 @@ margin: 0 0 0 0;
 background-color: greenyellow;
 }
 
-
+@media (max-width: 650px) {
+  .seats button {
+    margin: 1px;
+    padding: 3px;
+    font-size: .8em
+  }
+}
 @media (max-width: 500px) {
   * {
     height: auto;
@@ -601,7 +664,9 @@ background-color: greenyellow;
     margin: 1px;
   }
   .resources-inventory, .inventory-summary, .points-tracker, .army-road-tracker, .seats, .options, .chat {
-    font-size: 0.6em;
     padding: 1px;
+  }
+  .seats button {
+    font-size: .6em
   }
 }
