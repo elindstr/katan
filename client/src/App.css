@@ -295,21 +295,14 @@ background-color: #acecf1;
 .hex {
 opacity: .7;
 }
-/* .hex:hover {
-opacity: 1;
-} */
-/* .road {
-opacity: .8;
-}
-.road:hover {
-opacity: 1;
-} */
+
 .hover-display {
-opacity: 0;
+  opacity: 0;
 }
 .hover-display:hover {
-opacity: 1;
+  opacity: 1;
 }
+
 .dice-container button {
 margin: 2px;
 padding: 1px
