@@ -86,6 +86,7 @@ const App = () => {
     socket.on('getInitialRoll', () => {
       setCurrentMessage("Roll dice to see who starts.");
       setInitialRoll(true);
+      setGameStarted(true);
     });
     socket.on('placeFirstSettlement', () => {
       setIsInitialSettlementPlacement(true);
@@ -204,16 +205,23 @@ const App = () => {
     const socket = getSocket();
     const socketId = socket.id;
 
-    if (seats[index] === username) {
-      socket.emit('updateGameState', gameId, {
-        seatsObject: seatsObject.map((seat, idx) => (idx === index ? { username: null, socketId: null } : seat))
-      });
-    } else if (!seats.includes(username)) {
-      socket.emit('updateGameState', gameId, {
-        seatsObject: seatsObject.map((seat, idx) => (idx === index ? { username, socketId } : seat))
-      });
-    }
-  }, [gameId, seats, seatsObject, username]);
+  // Check if the user is already seated at the specified index
+  if (seatsObject[index]?.username === username) {
+    // User is already seated at this position, so they stand up
+    socket.emit('updateGameState', gameId, {
+      seatsObject: seatsObject.map((seat, idx) =>
+        idx === index ? { username: null, socketId: null } : seat
+      ),
+    });
+  } else if (!seatsObject.some(seat => seat.username === username)) {
+    // Check if the user is not seated and there is a free seat to sit down
+    socket.emit('updateGameState', gameId, {
+      seatsObject: seatsObject.map((seat, idx) =>
+        idx === index ? { username, socketId } : seat
+      ),
+    });
+  }
+}, [gameId, seatsObject, username]);
 
   const handleSendMessage = useCallback(() => {
     const socket = getSocket();
@@ -237,7 +245,7 @@ const App = () => {
     socket.emit('handleAction', gameId, action, arg1);
 
     if (action === 'Start Game') {
-      setGameStarted(true);
+      // setGameStarted(true);
     }
 
     if (action === 'Play Knight') {

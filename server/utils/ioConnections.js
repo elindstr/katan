@@ -127,9 +127,9 @@ const initializeSocket = (httpServer) => {
 
         // Generate players
         const colors = ["red", "blue", "green", "darkviolet"];
-        if (!game.state.seatsObject) {
-          console.log(`error starting ${gameId}; no one seated`)
-          return
+        if (!game.state.seatsObject || game.state.seatsObject.every(seat => seat.username === null)) {
+          console.log(`error starting ${gameId}; no one seated`);
+          return;
         }
         game.state.seatsObject.forEach((user, index) => {
           if (user.username !== null) {
@@ -866,7 +866,7 @@ const initializeSocket = (httpServer) => {
           const game = await Game.findById(roomId);
 
           if (game) {
-            // Stand up
+            // Stand up (xxx)
             // game.state.seats = game.state.seats.map((seat) => (seat === socket.username ? null : seat));
             game.state.seatsObject = game.state.seatsObject.map((seat) => (seat.username === socket.username ? { username: null, socketId: null } : seat));
             await game.save();
