@@ -1,7 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { initializeSocket, getSocket } from '../socket';
-import { useNavigate } from 'react-router-dom';
 import Auth from '../utils/auth';
 
 import Board from './Board';
@@ -14,7 +13,7 @@ import Chat from './Chat';
 import Dice from './Dice';
 import Options from './Options';
 
-function App() {
+const App = () => {
   const navigate = useNavigate();
   const referralState = useLocation().state;
   const [gameId, setGameId] = useState([]);
@@ -48,7 +47,7 @@ function App() {
 
   const [displayStartButton, setDisplayStartButton] = useState(false);
   const [displayDiceButton, setDisplayDiceButton] = useState(false);
-  
+
   const [isInitialRoll, setInitialRoll] = useState(false);
   const [isInitialSettlementPlacement, setIsInitialSettlementPlacement] = useState(false);
   const [isInitialRoadPlacement, setIsInitialRoadPlacement] = useState(false);
@@ -59,7 +58,7 @@ function App() {
   const [haveRolled, setHaveRolled] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [currentTurn, setCurrentTurn] = useState(false);
-  
+
   const [robberStep, setRobberStep] = useState(null);
   const [robberHexTarget, setRobberHexTarget] = useState(null);
   const [robberPlayerTarget, setRobberPlayerTarget] = useState(null);
@@ -83,58 +82,60 @@ function App() {
     });
 
     socket.on('getInitialRoll', () => {
-      setCurrentMessage("Roll dice to see who starts.")
-      setInitialRoll(true)
-    })
+      setCurrentMessage("Roll dice to see who starts.");
+      setInitialRoll(true);
+    });
     socket.on('placeFirstSettlement', () => {
-      setIsInitialSettlementPlacement(true)
-      setCurrentMessage("Place first settlement.")
-    })
+      setIsInitialSettlementPlacement(true);
+      setCurrentMessage("Place first settlement.");
+    });
     socket.on('placeFirstRoad', () => {
-      setIsInitialRoadPlacement(true)
-      setCurrentMessage("Place first road.")
-    })
+      setIsInitialRoadPlacement(true);
+      setCurrentMessage("Place first road.");
+    });
     socket.on('placeSecondSettlement', () => {
-      setIsInitialSettlementPlacement(true)
-      setCurrentMessage("Place second settlement.")
-    })
+      setIsInitialSettlementPlacement(true);
+      setCurrentMessage("Place second settlement.");
+    });
     socket.on('placeSecondRoad', () => {
-      setIsInitialRoadPlacement(true)
-      setCurrentMessage("Place second road.")
-    })
+      setIsInitialRoadPlacement(true);
+      setCurrentMessage("Place second road.");
+    });
 
     socket.on('stateUpdated', (updatedState) => {
       console.log('State updated:', updatedState); //dev
 
       setSeats(updatedState.seats || Array(updatedState.numSeats).fill(null));
       setSeatsObject(updatedState.seatsObject || Array(updatedState.numSeats).fill({ username: null, socketId: null }));
-      setNumPlayers(updatedState.numSeats)
+      setNumPlayers(updatedState.numSeats);
       setMessages(updatedState.messages);
       setHexes(updatedState.hexes);
       setPorts(updatedState.ports);
       setRoads(updatedState.roads);
       setSettlements(updatedState.settlements);
       setDice(updatedState.dice);
-      setCurrentTurn(updatedState.currentTurn)
+      setCurrentTurn(updatedState.currentTurn);
 
       const playerData = updatedState.players.find(player => player.username === username);
       setUserData(playerData);
 
-      if (!updatedState.isInGame && 
-        !updatedState.isInInitialSetup && 
+      if (
+        !updatedState.isInGame &&
+        !updatedState.isInInitialSetup &&
         referralState.isHost
-        //todo: in production: add condition that requires 3-4 players
-      ) {setDisplayStartButton(true)
-      } else {setDisplayStartButton(false)}
-      
+      ) {
+        setDisplayStartButton(true);
+      } else {
+        setDisplayStartButton(false);
+      }
 
-      // game loop routing
-      if ((updatedState.isInGame == true) &&
-          (updatedState.currentTurn == playerData.turnOrder)) {
-
-            setIsMyTurn(true)
-            updatedState.haveRolled? setHaveRolled(true): setHaveRolled(false) 
-          }
+      if (
+        updatedState.isInGame === true &&
+        updatedState.currentTurn === playerData.turnOrder
+      ) {
+        setIsMyTurn(true);
+        setHaveRolled(updatedState.haveRolled);
+      }
     });
 
     socket.on('isBuildingRoad', (userColor) => {
@@ -162,27 +163,24 @@ function App() {
     });
 
     socket.on('robberAuth', () => {
-      // console.log('robberAuth');
       setCurrentMessage('Select Hex to Move Robber');
       setRobberStep('robberSelectHex');
     });
 
     socket.on('devCardSelected', (devCardSelected) => {
-      //console.log('devCardSelected:', devCardSelected);
-      alert(`You received a ${devCardSelected}! Non-point development cards will appear in your inventory at the end of your turn.`)
+      alert(`You received a ${devCardSelected}! Non-point development cards will appear in your inventory at the end of your turn.`);
     });
-    
+
     socket.on('sendOffer', (offer) => {
       setCurrentOffer(offer);
     });
 
     socket.on('sevenRolled', (discardAmount) => {
-      console.log(`Seven was rolled; discard half: ${discardAmount}` )
-      setIsHandlingSeven(discardAmount)
+      console.log(`Seven was rolled; discard half: ${discardAmount}`);
+      setIsHandlingSeven(discardAmount);
     });
 
     socket.on('endGame', () => {
-      // console.log("game over");
       setCurrentMessage("game over");
     });
 
@@ -199,7 +197,7 @@ function App() {
     }
   }, [messages]);
 
-  const handleSitDown = (index) => {
+  const handleSitDown = useCallback((index) => {
     const socket = getSocket();
     const socketId = socket.id;
 
@@ -211,12 +209,10 @@ function App() {
       socket.emit('updateGameState', gameId, {
         seatsObject: seatsObject.map((seat, idx) => (idx === index ? { username, socketId } : seat))
       });
-    } else {
-      // console.log('You are already seated.');
     }
-  };
+  }, [gameId, seats, seatsObject, username]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = useCallback(() => {
     const socket = getSocket();
     const newMessage = {
       author: username,
@@ -225,30 +221,28 @@ function App() {
     };
     socket.emit('sendMessage', gameId, newMessage);
     setMessage('');
-  };
+  }, [gameId, message, username]);
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter') {
       handleSendMessage();
     }
-  };
+  }, [handleSendMessage]);
 
-  const handleAction = (action, arg1) => {
+  const handleAction = useCallback((action, arg1) => {
     const socket = getSocket();
     socket.emit('handleAction', gameId, action, arg1);
 
-    // on start
     if (action === 'Start Game') {
-      setGameStarted(true)
+      setGameStarted(true);
     }
 
-    // resets
-    setCurrentMessage("")
-    setInitialRoll(false)
-    setIsTrading(false)
-  };
+    setCurrentMessage('');
+    setInitialRoll(false);
+    setIsTrading(false);
+  }, [gameId]);
 
-  const handleBuildAction = (type, id) => {
+  const handleBuildAction = useCallback((type, id) => {
     const socket = getSocket();
 
     if (type === "isBuildingRoadOneOfTwo") {
@@ -263,60 +257,60 @@ function App() {
       socket.emit('handleBuildAction', gameId, typeMutation, id, isFreeBuild);
       setCurrentMessage('');
       setIsBuildingRoadTwoOfTwo(false);
-  
+
     } else if (type === "isInitialRoad") {
       const typeMutation = "isInitialRoad";
       socket.emit('handleBuildAction', gameId, typeMutation, id);
       setCurrentMessage('');
       setIsInitialRoadPlacement(false);
-      
+
     } else if (type === "isInitialSettlement") {
       const typeMutation = "isInitialSettlement";
       socket.emit('handleBuildAction', gameId, typeMutation, id);
       setCurrentMessage('');
       setIsInitialSettlementPlacement(false);
-      setIsLastBuiltSettlement(id)
+      setIsLastBuiltSettlement(id);
 
     } else {
       setCurrentMessage('');
       setIsBuildingRoad(false);
       setIsBuildingSettlement(false);
       setIsBuildingCity(false);
-      
+
       socket.emit('handleBuildAction', gameId, type, id);
     }
-  };
+  }, [gameId, isFreeBuild]);
 
-  const handleTradeOffer = (offer) => {
+  const handleTradeOffer = useCallback((offer) => {
     setIsTrading(false);
     const socket = getSocket();
     socket.emit('makeOffer', gameId, offer);
-  };
-  const bankTrade = (offer) => {
+  }, [gameId]);
+
+  const bankTrade = useCallback((offer) => {
     setIsTrading(false);
     const socket = getSocket();
     socket.emit('bankTrade', gameId, offer);
-  };
-  
+  }, [gameId]);
 
-  const handleTradeResponse = (response) => {
+  const handleTradeResponse = useCallback((response) => {
     if (response === 'accept') {
       const socket = getSocket();
       socket.emit('acceptOffer', gameId, currentOffer);
     }
     setIsTrading(false);
     setCurrentOffer(null);
-  };
+  }, [currentOffer, gameId]);
 
-  const handleRobberHexClick = (hexId) => {
+  const handleRobberHexClick = useCallback((hexId) => {
     if (robberStep === 'robberSelectHex') {
       setRobberHexTarget(hexId);
       setCurrentMessage('Select Player From Whom To Steal');
       setRobberStep('robberSelectPlayer');
     }
-  };
+  }, [robberStep]);
 
-  const handleRobberPlayerClick = (username) => {
+  const handleRobberPlayerClick = useCallback((username) => {
     if (robberStep === 'robberSelectPlayer') {
       setRobberPlayerTarget(username);
       const socket = getSocket();
@@ -324,30 +318,26 @@ function App() {
       setRobberStep(null);
       setCurrentMessage('');
     }
-  };
+  }, [gameId, robberHexTarget, robberStep]);
 
-  const handleCancelBuild = () => {
+  const handleCancelBuild = useCallback(() => {
     setCurrentMessage('');
     setIsBuildingRoad(false);
     setIsBuildingSettlement(false);
     setIsBuildingCity(false);
-  };
-  
-  const handleDiscard = (giving) => {
+  }, []);
+
+  const handleDiscard = useCallback((giving) => {
     setIsHandlingSeven(null);
     const socket = getSocket();
     socket.emit('reportingDiscard', gameId, giving);
-  };
- 
-  
+  }, [gameId]);
 
-  const handleOptionChange = (option) => {
-    // Logic to handle options drop down
-    console.log(option)
-    if(option==='leaveRoom') {
-      navigate('/dashboard')
+  const handleOptionChange = useCallback((option) => {
+    if (option === 'leaveRoom') {
+      navigate('/dashboard');
     }
-  };
+  }, [navigate]);
 
   useEffect(() => {
     if (currentOffer) {
@@ -355,17 +345,43 @@ function App() {
     }
   }, [currentOffer]);
 
+  const userInventory = useMemo(() => (userData ? userData.inventory : {
+    wood: 0,
+    brick: 0,
+    sheep: 0,
+    wheat: 0,
+    ore: 0,
+    knight: 0,
+    victoryPoint: 0,
+    roadBuilding: 0,
+    yearOfPlenty: 0,
+    monopoly: 0,
+    roads: 15,
+    settlements: 5,
+    cities: 4
+  }), [userData]);
+
+  const userPorts = useMemo(() => (userData ? userData.ports : {
+    hasWood: false,
+    hasBrick: false,
+    hasLumber: false,
+    hasSheep: false,
+    hasWheat: false,
+    hasOre: false,
+    hasWild: false
+  }), [userData]);
+
   return (
     <div className="app">
       <div className="main-column">
-        <Seats 
+        <Seats
           gameStarted={gameStarted}
-          numPlayers={numPlayers} 
-          seatsObject={seatsObject} 
+          numPlayers={numPlayers}
+          seatsObject={seatsObject}
           handleSitDown={handleSitDown}
-          currentTurn={currentTurn} 
+          currentTurn={currentTurn}
         />
-        <Board 
+        <Board
           hexes={hexes}
           ports={ports}
           roads={roads}
@@ -380,49 +396,48 @@ function App() {
           isInitialRoadPlacement={isInitialRoadPlacement}
           isLastBuiltSettlement={isLastBuiltSettlement}
           userColor={userColor}
-          inventoryResources={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }}
-          inventoryMaterials={userData ? userData.inventory : { knight: 0, victoryPoint: 0, roadBuilding: 0, yearOfPlenty: 0, monopoly: 0, roads: 15, settlements: 5, cities: 4  }}
+          inventoryResources={userInventory}
+          inventoryMaterials={userInventory}
           userData={userData}
-          handleRobberHexClick={handleRobberHexClick} 
+          handleRobberHexClick={handleRobberHexClick}
           handleRobberPlayerClick={handleRobberPlayerClick}
         />
-        {isHandlingSeven?
+        {isHandlingSeven ?
           <DiscardPanel
             isHandlingSeven={isHandlingSeven}
-            userData={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0, knight: 0, victoryPoint: 0, roadBuilding: 0, yearOfPlenty: 0, monopoly: 0, roads: 15, settlements: 5, cities: 4 }}
+            userData={userInventory}
             handleDiscard={handleDiscard}
           />
-        :
-        (!isTrading ? (
-          <UserPanel
-            currentMessage={currentMessage}
-            handleAction={handleAction}
-            userData={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0, knight: 0, victoryPoint: 0, roadBuilding: 0, yearOfPlenty: 0, monopoly: 0, roads: 15, settlements: 5, cities: 4 }}
-            setIsTrading={setIsTrading} 
-            isMyTurn={isMyTurn}
-            haveRolled={haveRolled}
-            handleCancelBuild={handleCancelBuild}
-            isBuildingRoad={isBuildingRoad}
-            isBuildingSettlement={isBuildingSettlement} 
-            isBuildingCity={isBuildingCity}
-          />
-        ) : (
-            !isTradingWithBank?
-              <TradePanel 
+          :
+          (!isTrading ? (
+            <UserPanel
+              currentMessage={currentMessage}
+              handleAction={handleAction}
+              userData={userInventory}
+              setIsTrading={setIsTrading}
+              isMyTurn={isMyTurn}
+              haveRolled={haveRolled}
+              handleCancelBuild={handleCancelBuild}
+              isBuildingRoad={isBuildingRoad}
+              isBuildingSettlement={isBuildingSettlement}
+              isBuildingCity={isBuildingCity}
+            />
+          ) : (
+            !isTradingWithBank ?
+              <TradePanel
                 username={username}
-                userData={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }} 
+                userData={userInventory}
                 setIsTrading={setIsTrading}
                 setIsTradingWithBank={setIsTradingWithBank}
                 handleTradeOffer={handleTradeOffer}
                 currentOffer={currentOffer}
                 handleTradeResponse={handleTradeResponse}
               />
-            :
+              :
               <TradeWithBankPanel
                 username={username}
-                userPorts={userData? userData.ports: {hasWood: false, hasBrick: false, hasLumber: false, hasSheep: false, hasWheat: false, hasOre: false, hasWild: false
-                }} 
-                userData={userData? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }} 
+                userPorts={userPorts}
+                userData={userInventory}
                 setIsTrading={setIsTrading}
                 setIsTradingWithBank={setIsTradingWithBank}
                 handleTradeOffer={handleTradeOffer}
@@ -430,21 +445,21 @@ function App() {
                 bankTrade={bankTrade}
               />
           )
-        )}
+          )}
       </div>
       <div className="side-column">
         <Options handleOptionChange={handleOptionChange} />
-        <Chat 
-          users={users} 
-          messages={messages} 
+        <Chat
+          users={users}
+          messages={messages}
           handleSendMessage={handleSendMessage}
           handleKeyPress={handleKeyPress}
           setMessage={setMessage}
           message={message}
         />
-        <Dice 
-          dice={dice} 
-          handleDiceAction={(action) => handleAction(action)}
+        <Dice
+          dice={dice}
+          handleDiceAction={handleAction}
           isRollingDice={isRollingDice}
           isInitialRoll={isInitialRoll}
           haveRolled={haveRolled}
@@ -457,6 +472,6 @@ function App() {
       </div>
     </div>
   );
-}
+};
 
 export default App;

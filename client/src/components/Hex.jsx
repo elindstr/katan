@@ -1,27 +1,37 @@
-// Hex.jsx
-function Hex({ hex, hexSize, dev, handleRobberHexClick }) {
-  
-  const id = hex.id 
-  const x = hex.x * hexSize
-  const y = hex.y * hexSize
-  const value = hex.value
-  const resource = hex.resource
-  const hasRobber = hex.hasRobber
+import React from 'react';
 
-  let color
-  if (resource == "wood") color = "darkolivegreen"
-  if (resource == "brick") color = "firebrick"
-  if (resource == "sheep") color = "limegreen"
-  if (resource == "wheat") color = "gold"
-  if (resource == "ore") color = "dimgray"
-  if (resource == "desert") color = "wheat"
+function Hex({ hex, hexSize, settlements, handleRobberHexClick }) {
+  const { id, x, y, value, resource, hasRobber, adjacentNodes } = hex;
+
+  let color;
+  switch (resource) {
+    case 'wood':
+      color = 'darkolivegreen';
+      break;
+    case 'brick':
+      color = 'firebrick';
+      break;
+    case 'sheep':
+      color = 'limegreen';
+      break;
+    case 'wheat':
+      color = 'gold';
+      break;
+    case 'ore':
+      color = 'dimgray';
+      break;
+    case 'desert':
+      color = 'wheat';
+      break;
+    default:
+      color = 'gray';
+  }
 
   const style = {
-    transform: `translate(${x}px, ${y}px)`,
+    transform: `translate(${x * hexSize}px, ${y * hexSize}px)`,
     position: 'absolute',
     width: `${hexSize}px`,
     height: `${hexSize}px`,
-    border: '',
     backgroundColor: color,
     clipPath: `polygon(
       49% 1%,
@@ -33,10 +43,24 @@ function Hex({ hex, hexSize, dev, handleRobberHexClick }) {
     )`
   };
 
+  const handleClick = () => {
+    let isEligible = false;
+    adjacentNodes.forEach(nodeId => {
+      const settlement = settlements.find(settlement => settlement.id === nodeId);
+      if (settlement && settlement.color) {
+        isEligible = true;
+      }
+    });
+
+    if (isEligible) {
+      handleRobberHexClick(id);
+    }
+  };
+
   return (
     <div className="hex" style={style}>
-      <div className="hex-inner" onClick={() => handleRobberHexClick(hex.id)}>
-        {value} {hasRobber? <span className="robber">&#9823;</span>: null}
+      <div className="hex-inner" onClick={handleClick}>
+        {value} {hasRobber && <span className="robber">&#9823;</span>}
       </div>
     </div>
   );

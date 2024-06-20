@@ -19,7 +19,7 @@ const initializeSocket = (httpServer) => {
       const game = await Game.findById(gameId);
       if (game) {
         game.state.messages = [...game.state.messages, message];
-        await game.markModified('state');
+        await game.markModified('state.messages');
         await game.save();
         await io.to(gameId).emit('stateUpdated', game.state);
       } else {
