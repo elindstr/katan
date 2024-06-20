@@ -14,7 +14,7 @@ const initializeSocket = (httpServer) => {
 
   // Chat message helper functions
   const handleSendMessage = async (gameId, message) => {
-    console.log("@ handleSendMessage:", gameId, message)
+    // console.log("@ handleSendMessage:", gameId, message)
     try {
       const game = await Game.findById(gameId);
       if (game) {
@@ -47,7 +47,6 @@ const initializeSocket = (httpServer) => {
 
     // Create Game
     socket.on('createGame', async (callback) => {
-      console.log("createGame")
 
       try {
         const game = new Game();
@@ -59,6 +58,7 @@ const initializeSocket = (httpServer) => {
         };
         await game.save();
         const gameId = game._id.toString();
+        console.log(`created new game: ${gameId}`)
 
         // Join user to room
         socket.join(gameId);
@@ -149,12 +149,63 @@ const initializeSocket = (httpServer) => {
       } else if (action === "Roll Dice") {
         const game = await Game.findById(gameId);
         game.state.dice = await rollDice(gameId);
+        const diceTotal = game.state.dice[0].value + game.state.dice[1].value;
         game.state.haveRolled = true;
+        
+        // collect resources
+        if (diceTotal !== 7) {
+          game.state.hexes.forEach(hex => {
+            if (hex.value === diceTotal && !hex.hasRobber) {
+              hex.adjacentNodes.forEach(nodeId => {
+                const settlement = game.state.settlements[nodeId];
+      
+                if (settlement && settlement.username) {
+                  const player = game.state.players.find(player => player.username === settlement.username);
+      
+                  if (player) {
+                    const resourceType = hex.resource;
+                    if (settlement.isCity) {
+                      player.inventory[resourceType] = (player.inventory[resourceType] || 0) + 2;
+                    } else {
+                      player.inventory[resourceType] = (player.inventory[resourceType] || 0) + 1;
+                    }
+                    // console.log(`Player ${player.username} received ${settlement.isCity ? 2 : 1} ${resourceType}`);
+                  }
+                }
+              });
+            }
+          });
+        }
+
+        // save and update
         await game.markModified('state');
         updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
 
-        await collectResources(gameId);
+
+        // check for 7
+        if (diceTotal === 7) {
+          await sendSystemMessage(gameId, `${socket.username} rolled a seven!`);
+          game.state.isHandlingSeven = true
+
+          // trigger discard half
+          game.state.players.forEach(player => { 
+            const resourceCount = player.inventory.wheat + player.inventory.brick + player.inventory.wood + player.inventory.sheep + player.inventory.ore
+            if (resourceCount > 7) {
+              const discardAmount = Math.floor(resourceCount / 2)
+              player.isHandlingSeven = true
+              io.to(player.socketId).emit('sevenRolled', discardAmount);              
+            }
+          })
+
+          //save
+          await game.markModified('state');
+          await game.save();
+
+          //wait for users to discard then trigger user to move knight
+          routingForSevenRoll(gameId)
+        }
+        
 
       } else if (action === "Initial Roll") {
         const game = await Game.findById(gameId);
@@ -242,6 +293,7 @@ const initializeSocket = (httpServer) => {
         // implement triggerRobberSteal
         socket.emit('robberAuth');
       
+
       } else if (action === "Moved Robber") {
         // arg1 = robberHexTarget; arg2 = robberUsername
         console.log(`${socket.username} moved the robber to hex ID ${arg1} on player ${arg2}`)
@@ -254,7 +306,7 @@ const initializeSocket = (httpServer) => {
         game.state.hexes.forEach(hex => {
           hex.hasRobber = false;
         });
-        game.state.hex[arg1].hasRobber = true
+        game.state.hexes[arg1].hasRobber = true
 
         // steal resources
         const victimResources = [];
@@ -292,7 +344,7 @@ const initializeSocket = (httpServer) => {
 
       } else if (action === "Play Year of Plenty Card") {
         //arg1 = chosenResources object
-        console.log('YOP resource:', arg1)
+        // console.log('YOP resource:', arg1)
 
         const game = await Game.findById(gameId);
         const player = game.state.players.find(player => player.username === socket.username);
@@ -311,7 +363,7 @@ const initializeSocket = (httpServer) => {
 
       } else if (action === "Play Monopoly Card") {
         // arg1 = resource to steal (string)
-        console.log('monopoly resource:', arg1);
+        // console.log('monopoly resource:', arg1);
         const game = await Game.findById(gameId);
         const player = game.state.players.find(player => player.username === socket.username);
     
@@ -370,6 +422,58 @@ const initializeSocket = (httpServer) => {
         }
       }
     })
+
+    // resolving seven roll
+    socket.on('reportingDiscard', async (gameId, giving) => {
+      // console.log(`${socket.username} discarded half: ${giving}. GameId: ${gameId}`);
+
+      try {
+        const game = await Game.findById(gameId);
+        const player = game.state.players.find(player => player.username === socket.username);
+
+        // update inventory
+        Object.entries(giving).forEach(([resource, amount]) => {
+          player.inventory[resource] -= amount;
+        });
+        player.isHandlingSeven = false;
+
+        // save and update
+        game.markModified('state');
+        const updatedGame = await game.save();
+        io.to(gameId).emit('stateUpdated', updatedGame.state);
+        await sendSystemMessage(gameId, `${socket.username} discarded half: ${giving}`);
+
+        // Check if all discards are resolved
+        await routingForSevenRoll(gameId);
+
+      } catch (error) {
+        console.error('Error during reportingDiscard:', error);
+      }
+    });
+
+    // function to handle routing after all discards are resolved
+    async function routingForSevenRoll(gameId) {
+      try {
+        const game = await Game.findById(gameId);
+
+        // check if all players have resolved their discards
+        let allDiscardsResolved = true;
+        game.state.players.forEach(player => {
+          if (player.isHandlingSeven === true) {
+            allDiscardsResolved = false;
+          }
+        });
+        if (!allDiscardsResolved) return;
+
+        // trigger knight stealing for the current player
+        const currentPlayerIndex = game.state.currentTurn;
+        const currentPlayer = game.state.players[currentPlayerIndex];
+        io.to(currentPlayer.socketId).emit('robberAuth');
+
+      } catch (error) {
+        console.error('Error during routingForSevenRoll:', error);
+      }
+    }
 
     // Implementing builds
     socket.on('handleBuildAction', async (gameId, type, id, isFreeBuild) => {

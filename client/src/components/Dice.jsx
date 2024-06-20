@@ -1,5 +1,5 @@
 // Dice.jsx
-function Dice({ dice, handleDiceAction, isInitialRoll, haveRolled, displayStartButton, isMyTurn }) {
+function Dice({ dice, handleDiceAction, isInitialRoll, haveRolled, displayStartButton, isMyTurn, isHandlingSeven, robberStep }) {
 
   return (
     <div className="dice-container">
@@ -29,7 +29,7 @@ function Dice({ dice, handleDiceAction, isInitialRoll, haveRolled, displayStartB
           () => handleDiceAction('Initial Roll')
         }>Roll Dice</button>}
 
-        {isMyTurn && haveRolled && 
+        {isMyTurn && haveRolled && !isHandlingSeven && !robberStep &&
         <button onClick={() => handleDiceAction('End Turn')}>End Turn</button>}
         
       </div>

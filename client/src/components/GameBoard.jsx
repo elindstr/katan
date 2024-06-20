@@ -9,6 +9,7 @@ import Seats from './Seats';
 import UserPanel from './UserPanel';
 import TradePanel from './TradePanel';
 import TradeWithBankPanel from './TradeWithBankPanel';
+import DiscardPanel from './DiscardPanel';
 import Chat from './Chat';
 import Dice from './Dice';
 import Options from './Options';
@@ -41,6 +42,7 @@ function App() {
   const [isBuildingCity, setIsBuildingCity] = useState(false);
   const [isTrading, setIsTrading] = useState(false);
   const [isTradingWithBank, setIsTradingWithBank] = useState(false);
+  const [isHandlingSeven, setIsHandlingSeven] = useState(null);
   const [currentOffer, setCurrentOffer] = useState(null);
   const [isRollingDice, setIsRollingDice] = useState(false);
 
@@ -170,9 +172,13 @@ function App() {
       alert(`You received a ${devCardSelected}! Non-point development cards will appear in your inventory at the end of your turn.`)
     });
     
-
     socket.on('sendOffer', (offer) => {
       setCurrentOffer(offer);
+    });
+
+    socket.on('sevenRolled', (discardAmount) => {
+      console.log(`Seven was rolled; discard half: ${discardAmount}` )
+      setIsHandlingSeven(discardAmount)
     });
 
     socket.on('endGame', () => {
@@ -327,6 +333,13 @@ function App() {
     setIsBuildingCity(false);
   };
   
+  const handleDiscard = (giving) => {
+    setIsHandlingSeven(null);
+    const socket = getSocket();
+    socket.emit('reportingDiscard', gameId, giving);
+  };
+ 
+  
 
   const handleOptionChange = (option) => {
     // Logic to handle options drop down
@@ -373,7 +386,14 @@ function App() {
           handleRobberHexClick={handleRobberHexClick} 
           handleRobberPlayerClick={handleRobberPlayerClick}
         />
-        {!isTrading ? (
+        {isHandlingSeven?
+          <DiscardPanel
+            isHandlingSeven={isHandlingSeven}
+            userData={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0, knight: 0, victoryPoint: 0, roadBuilding: 0, yearOfPlenty: 0, monopoly: 0, roads: 15, settlements: 5, cities: 4 }}
+            handleDiscard={handleDiscard}
+          />
+        :
+        (!isTrading ? (
           <UserPanel
             currentMessage={currentMessage}
             handleAction={handleAction}
@@ -387,28 +407,29 @@ function App() {
             isBuildingCity={isBuildingCity}
           />
         ) : (
-          !isTradingWithBank?
-            <TradePanel 
-              username={username}
-              userData={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }} 
-              setIsTrading={setIsTrading}
-              setIsTradingWithBank={setIsTradingWithBank}
-              handleTradeOffer={handleTradeOffer}
-              currentOffer={currentOffer}
-              handleTradeResponse={handleTradeResponse}
-            />
-          :
-            <TradeWithBankPanel
-              username={username}
-              userPorts={userData? userData.ports: {hasWood: false, hasBrick: false, hasLumber: false, hasSheep: false, hasWheat: false, hasOre: false, hasWild: false
-              }} 
-              userData={userData? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }} 
-              setIsTrading={setIsTrading}
-              setIsTradingWithBank={setIsTradingWithBank}
-              handleTradeOffer={handleTradeOffer}
-              currentOffer={currentOffer}
-              bankTrade={bankTrade}
-            />
+            !isTradingWithBank?
+              <TradePanel 
+                username={username}
+                userData={userData ? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }} 
+                setIsTrading={setIsTrading}
+                setIsTradingWithBank={setIsTradingWithBank}
+                handleTradeOffer={handleTradeOffer}
+                currentOffer={currentOffer}
+                handleTradeResponse={handleTradeResponse}
+              />
+            :
+              <TradeWithBankPanel
+                username={username}
+                userPorts={userData? userData.ports: {hasWood: false, hasBrick: false, hasLumber: false, hasSheep: false, hasWheat: false, hasOre: false, hasWild: false
+                }} 
+                userData={userData? userData.inventory : { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 }} 
+                setIsTrading={setIsTrading}
+                setIsTradingWithBank={setIsTradingWithBank}
+                handleTradeOffer={handleTradeOffer}
+                currentOffer={currentOffer}
+                bankTrade={bankTrade}
+              />
+          )
         )}
       </div>
       <div className="side-column">
@@ -430,6 +451,8 @@ function App() {
           displayStartButton={displayStartButton}
           displayDiceButton={displayDiceButton}
           isMyTurn={isMyTurn}
+          isHandlingSeven={isHandlingSeven}
+          robberStep={robberStep}
         />
       </div>
     </div>

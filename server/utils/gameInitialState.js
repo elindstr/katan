@@ -30,6 +30,7 @@ const gameInitialState = {
         "Monopoly","Monopoly",
         "Victory Point","Victory Point","Victory Point","Victory Point","Victory Point",
     ],
+    isHandlingSeven: false,
 }
 
 function playerGenerator () {
@@ -81,6 +82,7 @@ function playerGenerator () {
         longestRoad: false,
         largestArmy: false,
         points: 0,
+        isHandlingSeven: false,
     }
 }
 
