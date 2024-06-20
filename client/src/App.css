@@ -333,9 +333,10 @@ flex-direction: row;
 
 /* user-panel */
 .current-message {
-  font-size: 1.5em;
+  font-size: 1.3em;
   font-weight: bold;
   text-align: center;
+  font-family: Verdana, sans-serif;
 }
 .user-panel {
   display: flex;
@@ -350,6 +351,13 @@ flex-direction: row;
 }
 .current-message {
   margin-bottom: 10px;
+}
+.development-cards, .actions {
+  height: 100%;
+  width: 100%;
+  border: 1px solid rgb(239, 239, 239);
+  margin: 5px;
+  padding: 10px;
 }
 .seat, .development-cards, .actions {
   align-self: center;
