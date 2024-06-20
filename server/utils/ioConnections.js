@@ -100,6 +100,16 @@ const initializeSocket = (httpServer) => {
     socket.on('requestGames', async () => {
       try {
         const games = await Game.find({ 'state.isAlive': true }).sort({ 'state.createdOn': 1 });
+
+        const gamesWithPlayerCount = games.map(game => {
+          const room = io.sockets.adapter.rooms.get(game._id.toString());
+          const socketCount = room ? room.size : 0;
+          return {
+            ...game.toObject(),
+            socketCount,
+          };
+        });
+
         socket.emit('games', games);
       } catch (error) {
         console.error('Error requesting games:', error);
