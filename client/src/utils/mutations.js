@@ -1,3 +1,4 @@
+//client/utils/mutations.js
 import { gql } from '@apollo/client';
 
 export const LOGIN = gql`
@@ -27,6 +28,15 @@ export const ADD_USER = gql`
       user {
         _id
       }
+    }
+  }
+`;
+
+export const UPDATE_USERNAME = gql`
+  mutation updateUsername($username: String!) {
+    updateUsername(username: $username) {
+      _id
+      username
     }
   }
 `;

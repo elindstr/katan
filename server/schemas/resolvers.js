@@ -1,3 +1,4 @@
+//server/schemas/resolvers.js
 const { User, Game } = require('../models');
 const { signToken, AuthenticationError } = require('../utils/auth');
 const { GraphQLScalarType, Kind } = require('graphql');
@@ -54,6 +55,12 @@ const resolvers = {
     updateUser: async (parent, args, context) => {
       if (context.user) {
         return await User.findByIdAndUpdate(context.user._id, args, { new: true }).select('-password');
+      }
+      throw new AuthenticationError('You are not authenticated!');
+    },
+    updateUsername: async (parent, { username }, context) => {
+      if (context.user) {
+        return await User.findByIdAndUpdate(context.user._id, { username }, { new: true }).select('-password');
       }
       throw new AuthenticationError('You are not authenticated!');
     },

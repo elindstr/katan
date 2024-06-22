@@ -1,3 +1,4 @@
+//server/schemas/typeDefs.js
 const { gql } = require('apollo-server-express');
 
 const typeDefs = gql`
@@ -34,6 +35,7 @@ const typeDefs = gql`
     login(username: String!, password: String!): Auth
     createGame(state: JSON): Game
     updateGame(id: ID!, state: JSON): Game
+    updateUsername(username: String!): User
   }
 `;
 

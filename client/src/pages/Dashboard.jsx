@@ -17,7 +17,7 @@ const Dashboard = () => {
           <h1>Katan</h1>
           <div className="username-display">Username: {username}</div>
         </div>
-        <button onClick={() => navigate('/update-profile')}>Update Profile</button>
+        {/* <button onClick={() => navigate('/update-profile')}>Update Profile</button> */}
         <button onClick={() => navigate('/create-game')}>Create Game</button>
         <button onClick={() => navigate('/join-game')}>Join Game</button>
         <button onClick={handleLogout}>Sign Out</button>

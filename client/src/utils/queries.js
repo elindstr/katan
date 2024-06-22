@@ -1,3 +1,4 @@
+//client/utils/queries.js
 import { gql } from '@apollo/client';
 
 // Query to fetch a single user
