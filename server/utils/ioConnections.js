@@ -162,60 +162,56 @@ const initializeSocket = (httpServer) => {
         const diceTotal = game.state.dice[0].value + game.state.dice[1].value;
         game.state.haveRolled = true;
         
-        // collect resources
+        // Collect resources if the dice total is not 7
         if (diceTotal !== 7) {
           game.state.hexes.forEach(hex => {
             if (hex.value === diceTotal && !hex.hasRobber) {
               hex.adjacentNodes.forEach(nodeId => {
                 const settlement = game.state.settlements[nodeId];
-      
+                
                 if (settlement && settlement.username) {
                   const player = game.state.players.find(player => player.username === settlement.username);
-      
+                  
                   if (player) {
                     const resourceType = hex.resource;
-                    if (settlement.isCity) {
-                      player.inventory[resourceType] = (player.inventory[resourceType] || 0) + 2;
-                    } else {
-                      player.inventory[resourceType] = (player.inventory[resourceType] || 0) + 1;
-                    }
-                    // console.log(`Player ${player.username} received ${settlement.isCity ? 2 : 1} ${resourceType}`);
+                    const resourceAmount = settlement.isCity ? 2 : 1;
+                    player.inventory[resourceType] = (player.inventory[resourceType] || 0) + resourceAmount;
+      
+                    // console.log(`Player ${player.username} received ${resourceAmount} ${resourceType}`);
                   }
                 }
               });
             }
           });
         }
-
-        // save and update
-        await game.markModified('state');
-        updatedGame = await game.save();
+      
+        // Save the updated game state
+        game.markModified('state');
+        const updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
-
-
-        // check for 7
+      
+        // Check if the dice total is 7
         if (diceTotal === 7) {
           await sendSystemMessage(gameId, `${socket.username} rolled a seven!`);
-          game.state.isHandlingSeven = true
-
-          // trigger discard half
-          game.state.players.forEach(player => { 
-            const resourceCount = player.inventory.wheat + player.inventory.brick + player.inventory.wood + player.inventory.sheep + player.inventory.ore
+          game.state.isHandlingSeven = true;
+      
+          // Trigger discard half for players with more than 7 resources
+          game.state.players.forEach(player => {
+            const resourceCount = player.inventory.wheat + player.inventory.brick + player.inventory.wood + player.inventory.sheep + player.inventory.ore;
             if (resourceCount > 7) {
-              const discardAmount = Math.floor(resourceCount / 2)
-              player.isHandlingSeven = true
-              io.to(player.socketId).emit('sevenRolled', discardAmount);              
+              const discardAmount = Math.floor(resourceCount / 2);
+              player.isHandlingSeven = true;
+              io.to(player.socketId).emit('sevenRolled', discardAmount);
             }
-          })
-
-          //save
-          await game.markModified('state');
+          });
+      
+          // Save and update the game state
+          game.markModified('state');
           await game.save();
-
-          //wait for users to discard then trigger user to move knight
-          routingForSevenRoll(gameId)
-        }
-        
+      
+          // Wait for users to discard, then trigger the user to move the knight
+          routingForSevenRoll(gameId);
+        }      
 
       } else if (action === "Initial Roll") {
         const game = await Game.findById(gameId);
