@@ -1,4 +1,3 @@
-//JoinGame.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { initializeSocket } from '../socket';
@@ -16,14 +15,9 @@ const JoinGame = () => {
     socket.emit('requestGames');
 
     socket.on('games', (games) => {
-      const sortedGames = games.sort((a, b) => {
-        if (a.state.host < b.state.host) return -1;
-        if (a.state.host > b.state.host) return 1;
-        return new Date(b.state.createdOn) - new Date(a.state.createdOn);
-      });
-      setGames(sortedGames);
+      console.log(games);
+      setGames(games);
       setLoading(false);
-      console.log('Games:', sortedGames);
     });
 
     return () => {
@@ -53,7 +47,7 @@ const JoinGame = () => {
                 <strong>Created On:</strong> {new Date(game.state.createdOn).toLocaleString()}
               </div>
               <div>
-                <strong>Users:</strong> {game.socketCount? game.socketCount: 0}
+                <strong>Users:</strong> {game.socketCount ? game.socketCount : 0}
               </div>
               <button onClick={() => handleJoinGame(game._id)}>Join Game</button>
             </li>

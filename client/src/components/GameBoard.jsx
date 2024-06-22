@@ -245,7 +245,7 @@ const App = () => {
     socket.emit('handleAction', gameId, action, arg1);
 
     if (action === 'Start Game') {
-      // setGameStarted(true);
+      // setGameStarted(true); // moved to on server initial roll
     }
     if (action === 'End Turn') {
       setIsMyTurn(false);
