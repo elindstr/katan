@@ -75,6 +75,9 @@ const resolvers = {
         console.log("login error: incorrect password,", username);
         throw new AuthenticationError('Incorrect password.');
       }
+      if (!correctPw) {
+        throw new AuthenticationError('Incorrect password.');
+      }
       const token = signToken(user);
       console.log("new sign in:", username);
 

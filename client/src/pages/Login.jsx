@@ -1,5 +1,4 @@
-//login.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
 import { LOGIN, ADD_USER } from '../utils/mutations';
@@ -14,6 +13,7 @@ const Login = () => {
     firstName: '',
     lastName: ''
   });
+  const [errorMessage, setErrorMessage] = useState('');
 
   const navigate = useNavigate();
   const { loading, data } = useQuery(QUERY_USERS);
@@ -27,12 +27,12 @@ const Login = () => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    setErrorMessage(''); // Reset the error message
     try {
       if (isSignup) {
-
         // Check if username is already taken
         if (data && data.users.some(user => user.username === formState.username)) {
-          alert('Username is already taken. Please choose another one.');
+          setErrorMessage('Username is already taken. Please choose another one.');
           return;
         }
         const mutationResponse = await addUser({
@@ -43,25 +43,46 @@ const Login = () => {
             lastName: formState.lastName
           }
         });
-        // console.log("@46 Mutation response:", mutationResponse);
         const token = mutationResponse.data.addUser.token;
         Auth.login(token);
-        
       } else {
         const mutationResponse = await login({
           variables: { username: formState.username, password: formState.password }
         });
-        // console.log("@54 Mutation response:", mutationResponse);
         const token = mutationResponse.data.login.token;
         Auth.login(token);
-
       }
-      console.log("redirecting to dashboard")
       navigate('/'); // Redirect to dashboard
     } catch (e) {
-      console.log(e);
+      console.log("Error details:", e);
+      if (e.graphQLErrors) {
+        e.graphQLErrors.forEach((error) => {
+          console.log("GraphQL Error:", error.message);
+          if (error.message.includes('User validation failed')) {
+            if (error.message.includes('password')) {
+              setErrorMessage('Password is too short. It should be at least 5 characters long.');
+            }
+          } else if (error.extensions?.code === 'UNAUTHENTICATED' || error.message.includes('No user found') || error.message.includes('Incorrect password')) {
+            setErrorMessage('The provided credentials are incorrect.');
+          } else {
+            setErrorMessage('Unable to login.');
+          }
+        });
+      } else if (e.networkError) {
+        console.log("Network Error:", e.networkError.message);
+        setErrorMessage('Network error. Please check your internet connection.');
+      } else {
+        console.log("Other Error:", e.message);
+        setErrorMessage('An unexpected error occurred. Please try again.');
+      }
     }
   };
+
+  useEffect(() => {
+    if (loginError || signupError) {
+      console.log("Mutation Error:", loginError || signupError);
+    }
+  }, [loginError, signupError]);
 
   return (
     <div className="landing-page">
@@ -104,11 +125,11 @@ const Login = () => {
             onChange={handleInputChange}
             required
           />
-          {loginError || signupError ? (
+          {errorMessage && (
             <div>
-              <p className="error-text">The provided credentials are incorrect</p>
+              <p className="error-text">{errorMessage}</p>
             </div>
-          ) : null}
+          )}
           <button type="submit">{isSignup ? 'Sign Up' : 'Login'}</button>
         </form>
         <button className="toggle-button" onClick={() => setIsSignup(!isSignup)}>
