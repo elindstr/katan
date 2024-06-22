@@ -247,6 +247,9 @@ const App = () => {
     if (action === 'Start Game') {
       // setGameStarted(true);
     }
+    if (action === 'End Turn') {
+      setIsMyTurn(false);
+    }
 
     if (action === 'Play Knight') {
       setKnightIsLocked(true)

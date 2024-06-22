@@ -80,16 +80,16 @@ function UserPanel({ currentMessage, userData, handleAction, setIsTrading, isMyT
         <h4>Development Cards</h4>
         <div>Points: {userData? userData.victoryPoint : 0}</div>
         <div>Knights: {userData? userData.knight: 0} 
-            {userData.knight > 0 && <button onClick={() => playCard('Knight')}>Play</button>}
+            {isMyTurn && userData.knight > 0 && <button onClick={() => playCard('Knight')}>Play</button>}
         </div>
         <div>Road Building: {userData? userData.roadBuilding: 0} 
-            {userData.roadBuilding > 0 && <button onClick={() => playCard('Road Building')}>Play</button>}
+            {isMyTurn && userData.roadBuilding > 0 && <button onClick={() => playCard('Road Building')}>Play</button>}
         </div>
         <div>Year of Plenty: {userData? userData.yearOfPlenty: 0} 
-            {userData.yearOfPlenty > 0 && <button onClick={() => playCard('Year of Plenty')}>Play</button>}
+            {isMyTurn && userData.yearOfPlenty > 0 && <button onClick={() => playCard('Year of Plenty')}>Play</button>}
         </div>
         <div>Monopoly: {userData? userData.monopoly: 0} 
-            {userData.monopoly > 0 && <button onClick={() => playCard('Monopoly')}>Play</button>}
+            {isMyTurn && userData.monopoly > 0 && <button onClick={() => playCard('Monopoly')}>Play</button>}
         </div>
       </div>
 
