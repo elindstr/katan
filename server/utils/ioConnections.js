@@ -123,7 +123,7 @@ const initializeSocket = (httpServer) => {
       if (action === "Start Game") { 
         
         // Shuffle board
-        const game = await shuffle(gameId);
+        const game = await shuffleBoard(gameId);
 
         // Generate players
         const colors = ["red", "blue", "green", "darkviolet"];
@@ -158,7 +158,7 @@ const initializeSocket = (httpServer) => {
 
       } else if (action === "Roll Dice") {
         const game = await Game.findById(gameId);
-        game.state.dice = await rollDice(gameId);
+        game.state.dice = await rollDice();
         const diceTotal = game.state.dice[0].value + game.state.dice[1].value;
         game.state.haveRolled = true;
         
@@ -216,7 +216,7 @@ const initializeSocket = (httpServer) => {
       } else if (action === "Initial Roll") {
         const game = await Game.findById(gameId);
         const player = game.state.players.find(player => player.username === socket.username);
-        game.state.dice = await rollDice(gameId);
+        game.state.dice = await rollDice();
         const roll = game.state.dice[0].value + game.state.dice[1].value 
         player.initialState.initialRoll = roll
 
@@ -1021,7 +1021,7 @@ function shuffleArray(array) {
 }
 
 // Shuffle for new game
-async function shuffle(gameId) {
+async function shuffleBoard(gameId) {
   const game = await Game.findById(gameId);
 
   const shuffleArray = (array) => {
@@ -1066,12 +1066,12 @@ async function shuffle(gameId) {
 
   game.markModified('state');
   const updatedGame = await game.save();
-  return updatedGame;
+  // return updatedGame;
 }
 
 // Roll dice
 const crypto = require('crypto');
-async function rollDice(gameId) {
+async function rollDice() {
   console.log("running roll dice");
 
   const getRandomDie = () => {
