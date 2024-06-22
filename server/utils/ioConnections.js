@@ -1083,17 +1083,24 @@ async function shuffle(gameId) {
 }
 
 // Roll dice
+const crypto = require('crypto');
 async function rollDice(gameId) {
-  console.log("running roll dice")
-  const getRandomDie = () => Math.floor(Math.random() * 6) + 1;
+  console.log("running roll dice");
+
+  const getRandomDie = () => {
+    const randomBytes = crypto.randomBytes(1);
+    return (randomBytes[0] % 6) + 1;
+  };
   const die1 = getRandomDie();
   const die2 = getRandomDie();
   const dice = [
-      { value: die1, src: `/images/dice/${die1}.png`, alt: `Die: ${die1}` },
-      { value: die2, src: `/images/dice/${die2}.png`, alt: `Die: ${die2}` }
-    ]
+    { value: die1, src: `/images/dice/${die1}.png`, alt: `Die: ${die1}` },
+    { value: die2, src: `/images/dice/${die2}.png`, alt: `Die: ${die2}` }
+  ];
+
   return dice;
 }
+
 
 // Calculate Longest Road (Path of Roads)
 function calculateLongestRoad(roads, username) {
