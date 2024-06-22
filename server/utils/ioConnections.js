@@ -345,7 +345,8 @@ const initializeSocket = (httpServer) => {
         game.markModified('state');
         const updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
-        await sendSystemMessage(gameId, `${socket.username} moved the robber and stole from ${arg2}`);
+
+        await sendSystemMessage(gameId, `${socket.username} moved the robber and stole a ${stolenResource} from ${arg2}`);
 
         // updates points (and check for largest army)
         await updatePoints(gameId)
