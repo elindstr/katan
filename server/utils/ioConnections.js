@@ -455,7 +455,11 @@ const initializeSocket = (httpServer) => {
         game.markModified('state');
         const updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
-        await sendSystemMessage(gameId, `${socket.username} discarded half: ${giving}`);
+
+        const givingAsString = Object.entries(giving)
+          .map(([resource, amount]) => `${resource}: ${amount}`)
+          .join(', ');
+        await sendSystemMessage(gameId, `${socket.username} discarded half: ${givingAsString}`);
 
         // Check if all discards are resolved
         await routingForSevenRoll(gameId);
