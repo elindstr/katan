@@ -192,7 +192,6 @@ const initializeSocket = (httpServer) => {
       
         // Check if the dice total is 7
         if (diceTotal === 7) {
-          await sendSystemMessage(gameId, `${socket.username} rolled a seven!`);
           game.state.isHandlingSeven = true;
       
           // Trigger discard half for players with more than 7 resources
@@ -208,6 +207,7 @@ const initializeSocket = (httpServer) => {
           // Save and update the game state
           game.markModified('state');
           await game.save();
+          await sendSystemMessage(gameId, `${socket.username} rolled a seven!`);
       
           // Wait for users to discard, then trigger the user to move the knight
           routingForSevenRoll(gameId);
@@ -373,7 +373,7 @@ const initializeSocket = (httpServer) => {
         game.markModified('state');
         const updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
-        sendSystemMessage(gameId, `${socket.username} played year of plenty card`);
+        await sendSystemMessage(gameId, `${socket.username} played year of plenty card`);
 
       } else if (action === "Play Monopoly Card") {
         // arg1 = resource to steal (string)
@@ -396,7 +396,7 @@ const initializeSocket = (httpServer) => {
         game.markModified('state');
         const updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
-        sendSystemMessage(gameId, `${socket.username} played Monopoly card and stole ${totalStolen} ${arg1}`);
+        await sendSystemMessage(gameId, `${socket.username} played Monopoly card and stole ${totalStolen} ${arg1}`);
 
 
       } else if (action === "End Turn") {
@@ -499,8 +499,6 @@ const initializeSocket = (httpServer) => {
         
         // update board
         if (type === "road") {
-          await sendSystemMessage(gameId, `${socket.username} built a ${type}`);
-
           game.state.roads[id] = {
             ...game.state.roads[id],
             color: player.color,
@@ -532,8 +530,6 @@ const initializeSocket = (httpServer) => {
         }
 
         if (type === "settlement") {
-          await sendSystemMessage(gameId, `${socket.username} built a ${type}`);
-
           game.state.settlements[id] = {
             ...game.state.settlements[id],
             color: player.color,
@@ -597,8 +593,6 @@ const initializeSocket = (httpServer) => {
 
         }
         if (type === "city") {
-          await sendSystemMessage(gameId, `${socket.username} built a ${type}`);
-
           game.state.settlements[id] = {
             ...game.state.settlements[id],
             color: player.color,
@@ -618,6 +612,7 @@ const initializeSocket = (httpServer) => {
         game.markModified('state');
         const updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
+        await sendSystemMessage(gameId, `${socket.username} built a ${type}`);
 
         // updates points
         await updatePoints(gameId)
@@ -675,14 +670,14 @@ const initializeSocket = (httpServer) => {
         } while (currentIndex !== highestPlayerIndex);
     
         const highestPlayer = game.state.players[highestPlayerIndex].username;
-        await sendSystemMessage(gameId, `${highestPlayer} starts by placing their first settlement and road.`);
-    
+        
         // Reorder players based on turnOrder
         game.state.players.sort((a, b) => a.turnOrder - b.turnOrder);
     
         // Save and update the game state
         game.markModified('state');
         await game.save();
+        await sendSystemMessage(gameId, `${highestPlayer} starts by placing their first settlement and road.`);
     
         // Trigger initial settlements
         routingInitialPlacements(gameId);
@@ -730,13 +725,12 @@ const initializeSocket = (httpServer) => {
       game.state.isInGame = true
       game.state.currentTurn = 0
       game.state.haveRolled = false;
+
       game.markModified('state');
       const updatedGame = await game.save();
       io.to(gameId).emit('stateUpdated', updatedGame.state);
-
       await sendSystemMessage(gameId, `Game on!`);
     }
-
 
     // Trading
     socket.on('makeOffer', async (gameId, offer) => {
@@ -856,167 +850,164 @@ const initializeSocket = (httpServer) => {
 
     // Room Chat Messages
     socket.on('sendMessage', async (gameId, message) => {
-      await handleSendMessage(gameId, message);
+      handleSendMessage(gameId, message);
     });
 
     // User Disconnects
     socket.on('disconnect', async () => {
       try {
         console.log(`User ${socket.username} disconnected`);
-
+    
         // Get list of rooms to which the socket is joined
         const rooms = Array.from(socket.rooms).filter(room => room !== socket.id);
         for (const roomId of rooms) {
           const game = await Game.findById(roomId);
-
+    
           if (game) {
-            // Stand up (xxx)
-            // game.state.seats = game.state.seats.map((seat) => (seat === socket.username ? null : seat));
-            game.state.seatsObject = game.state.seatsObject.map((seat) => (seat.username === socket.username ? { username: null, socketId: null } : seat));
+            // Stand up
+            game.state.seatsObject = game.state.seatsObject.map(seat => 
+              seat.username === socket.username ? { username: null, socketId: null } : seat
+            );
             await game.save();
-
+    
             // Announce leaving
             await sendSystemMessage(roomId, `${socket.username} left the room`);
-
+    
             // Leave room
             socket.leave(roomId);
-
-            // clean up room if empty
+    
+            // Clean up room if empty
             const room = io.sockets.adapter.rooms.get(roomId);
             if (!room && !game.state.isInGame) {
-              game.state.isAlive = false
+              game.state.isAlive = false;
               await game.markModified('state');
               await game.save();
             } 
-
           }
         }
       } catch (error) {
         console.error('Error handling disconnect:', error);
       }
     });
-  });
 
-  // update points (and check longest road / largest army status)
-  const updatePoints = async (gameId) => {
-    console.log("updating points");
-    const game = await Game.findById(gameId);
-
-    if (!game) {
-      console.error("Game not found:", gameId);
-      return;
-    }
-
-    // update longest road and largest army holders
-    let longestRoadPlayer = null;
-    let minLongestRoad = 4;
-    let largestArmyPlayer = null;
-    let minLargestArmy = 2;
-
-    // check if any player already has award
-    game.state.players.forEach(player => {
-      if (player.longestRoad) {
-        longestRoadPlayer = player.username;
-        minLongestRoad = player.roadLength;
+    // update points (and check longest road / largest army status)
+    const updatePoints = async (gameId) => {
+      console.log("updating points");
+      const game = await Game.findById(gameId);
+    
+      if (!game) {
+        console.error("Game not found:", gameId);
+        return;
       }
-      if (player.largestArmy) {
-        largestArmyPlayer = player.username;
-        minLargestArmy = player.knightCount;
-      }
-    });
-
-    // check for the minimum needed and (re)assign awards if new
-    await game.state.players.forEach(player => {
-      if (player.roadLength > minLongestRoad) {
-        if (longestRoadPlayer) {
-          const prevHolder = game.state.players.find(p => p.username === longestRoadPlayer);
-          if (prevHolder) prevHolder.longestRoad = false;
+    
+      let longestRoadPlayer = null;
+      let newLongestRoadPlayer = null;
+      let minLongestRoad = 4;
+      let largestArmyPlayer = null;
+      let newLargestArmyPlayer = null;
+      let minLargestArmy = 2;
+    
+      game.state.players.forEach(player => {
+        if (player.longestRoad) {
+          longestRoadPlayer = player.username;
+          minLongestRoad = player.roadLength;
         }
-        player.longestRoad = true;
-        longestRoadPlayer = player.username;
-        minLongestRoad = player.roadLength;
-        sendSystemMessage(gameId, `${player.username} acquired the longest road!`);
-      }
-
-      if (player.knightCount > minLargestArmy) {
-        if (largestArmyPlayer) {
-          const prevHolder = game.state.players.find(p => p.username === largestArmyPlayer);
-          if (prevHolder) prevHolder.largestArmy = false;
-        }
-        player.largestArmy = true;
-        largestArmyPlayer = player.username;
-        minLargestArmy = player.knightCount;
-        sendSystemMessage(gameId, `${player.username} acquired the largest army!`);
-      }
-    });
-
-    // Update points for each player
-    await game.state.players.forEach(player => {
-      player.points = 0;
-
-      // Count settlements
-      game.state.settlements.forEach(settlement => {
-        if (settlement.username === player.username) {
-          if (!settlement.isCity) {
-            player.points += 1;
-          } else {
-            player.points += 2;
-          }
+        if (player.largestArmy) {
+          largestArmyPlayer = player.username;
+          minLargestArmy = player.knightCount;
         }
       });
-
-      // Count victory points and awards
-      player.points += player.inventory.victoryPoint || 0;
-      if (player.longestRoad) player.points += 2;
-      if (player.largestArmy) player.points += 2;
-    });
-
-    // Save and update
-    game.markModified('state');
-    const updatedGame = await game.save();
-    io.to(gameId).emit('stateUpdated', updatedGame.state);
-    console.log('Points updated');
-
-    // Check for win
-    await updatedGame.state.players.forEach(player => {
-      if (player.points >= 10) {
-        sendSystemMessage(gameId, `${player.username} won!`);
-        io.to(gameId).emit('endGame');
-      }
-    })
-  };
-
-  // Collect Resources For Current Roll
-  async function collectResources(gameId) {
-    console.log("collecting resources");
-    const game = await Game.findById(gameId);
-    const diceTotal = game.state.dice[0].value + game.state.dice[1].value;
-    game.state.hexes.forEach(hex => {
-      if (hex.value === diceTotal && !hex.hasRobber) {
-        hex.adjacentNodes.forEach(nodeId => {
-          const settlement = game.state.settlements[nodeId];
-
-          if (settlement && settlement.username) {
-            const player = game.state.players.find(player => player.username === settlement.username);
-
-            if (player) {
-              const resourceType = hex.resource;
-              if (settlement.isCity) {
-                player.inventory[resourceType] = (player.inventory[resourceType] || 0) + 2;
-              } else {
-                player.inventory[resourceType] = (player.inventory[resourceType] || 0) + 1;
-              }
-              console.log(`Player ${player.username} received ${settlement.isCity ? 2 : 1} ${resourceType}`);
-            }
+    
+      game.state.players.forEach(player => {
+        if (player.roadLength > minLongestRoad) {
+          if (longestRoadPlayer && longestRoadPlayer !== player.username) {
+            const prevHolder = game.state.players.find(p => p.username === longestRoadPlayer);
+            if (prevHolder) prevHolder.longestRoad = false;
+          }
+          player.longestRoad = true;
+          longestRoadPlayer = player.username;
+          minLongestRoad = player.roadLength;
+          newLongestRoadPlayer = player.username;
+        }
+    
+        if (player.knightCount > minLargestArmy) {
+          if (largestArmyPlayer && largestArmyPlayer !== player.username) {
+            const prevHolder = game.state.players.find(p => p.username === largestArmyPlayer);
+            if (prevHolder) prevHolder.largestArmy = false;
+          }
+          player.largestArmy = true;
+          largestArmyPlayer = player.username;
+          minLargestArmy = player.knightCount;
+          newLargestArmyPlayer = player.username;
+        }
+      });
+    
+      game.state.players.forEach(player => {
+        player.points = 0;
+    
+        game.state.settlements.forEach(settlement => {
+          if (settlement.username === player.username) {
+            player.points += settlement.isCity ? 2 : 1;
           }
         });
+    
+        player.points += player.inventory.victoryPoint || 0;
+        if (player.longestRoad) player.points += 2;
+        if (player.largestArmy) player.points += 2;
+      });
+    
+      game.markModified('state');
+      const updatedGame = await game.save();
+      io.to(gameId).emit('stateUpdated', updatedGame.state);
+      console.log('Points updated');
+    
+      if (newLongestRoadPlayer) {
+        sendSystemMessage(gameId, `${newLongestRoadPlayer} acquired the longest road!`);
       }
-    });
-    game.markModified('state.players');
-    const updatedGame = await game.save();
-    io.to(gameId).emit('stateUpdated', updatedGame.state);
-  }
+      if (newLargestArmyPlayer) {
+        sendSystemMessage(gameId, `${newLargestArmyPlayer} acquired the largest army!`);
+      }
+    
+      updatedGame.state.players.forEach(player => {
+        if (player.points >= 10) {
+          sendSystemMessage(gameId, `${player.username} won!`);
+          io.to(gameId).emit('endGame');
+        }
+      });
+    };
+    
+    // Collect Resources For Current Roll
+    async function collectResources(gameId) {
+      console.log("collecting resources");
+      const game = await Game.findById(gameId);
+      const diceTotal = game.state.dice[0].value + game.state.dice[1].value;
+      game.state.hexes.forEach(hex => {
+        if (hex.value === diceTotal && !hex.hasRobber) {
+          hex.adjacentNodes.forEach(nodeId => {
+            const settlement = game.state.settlements[nodeId];
+  
+            if (settlement && settlement.username) {
+              const player = game.state.players.find(player => player.username === settlement.username);
+  
+              if (player) {
+                const resourceType = hex.resource;
+                if (settlement.isCity) {
+                  player.inventory[resourceType] = (player.inventory[resourceType] || 0) + 2;
+                } else {
+                  player.inventory[resourceType] = (player.inventory[resourceType] || 0) + 1;
+                }
+                console.log(`Player ${player.username} received ${settlement.isCity ? 2 : 1} ${resourceType}`);
+              }
+            }
+          });
+        }
+      });
+      game.markModified('state.players');
+      const updatedGame = await game.save();
+      io.to(gameId).emit('stateUpdated', updatedGame.state);
+    }
 
+  });//io.on('connection', (socket) => {
   return io;
 }; // END IO SERVER
 
@@ -1096,7 +1087,6 @@ async function rollDice(gameId) {
 
   return dice;
 }
-
 
 // Calculate Longest Road (Path of Roads)
 function calculateLongestRoad(roads, username) {
