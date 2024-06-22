@@ -321,8 +321,15 @@ const initializeSocket = (httpServer) => {
         // steal resources
         const victimResources = [];
         for (let resource in victim.inventory) {
-          for (let i = 0; i < victim.inventory[resource]; i++) {
-            victimResources.push(resource);
+          if (  (resource === 'wood') ||
+                (resource === 'brick') ||
+                (resource === 'sheep') ||
+                (resource === 'wheat') ||
+                (resource === 'ore')
+            ) {
+            for (let i = 0; i < victim.inventory[resource]; i++) {
+              victimResources.push(resource);
+            }
           }
         }
         let stolenResource;
