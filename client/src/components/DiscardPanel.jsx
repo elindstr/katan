@@ -65,7 +65,10 @@ function DiscardPanel({ isHandlingSeven, userData, handleDiscard }) {
                   {giving[resource]}
                   <button 
                     onClick={() => updateGiving(resource, 1)}
-                    disabled={giving[resource] >= inventory[resource]}
+                    disabled={
+                      (giving[resource] >= inventory[resource]) ||
+                      (totalGiving === requiredDiscardAmount)
+                    }
                   >
                     +
                   </button>

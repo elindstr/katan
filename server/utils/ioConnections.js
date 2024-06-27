@@ -131,7 +131,10 @@ const initializeSocket = (httpServer) => {
           console.log(`error starting ${gameId}; no one seated`);
           return;
         }
-        game.state.seatsObject.forEach((user, index) => {
+
+        // filter for non empty seats; assign seat holders as players
+        const nonEmptySeats = game.state.seatsObject.filter(seat => seat.username !== null);
+        nonEmptySeats.forEach((user, index) => {
           if (user.username !== null) {
             const player = playerGenerator();
             player.username = user.username; 
@@ -139,7 +142,20 @@ const initializeSocket = (httpServer) => {
             player.seat = index;
             player.color = colors[index];
             game.state.players.push(player);
+
+            // Update the existing seatsObject
+            game.state.seatsObject[index] = {
+            username: player.username,
+            socketId: player.socketId,
+            color: player.color // dev
+            };
           }
+        
+        // clear unused seatsObject data
+        for (let i = nonEmptySeats.length; i < game.state.seatsObject.length; i++) {
+          game.state.seatsObject[i] = { username: null, socketId: null };
+        }
+
         });
         game.state = {
           ...game.state,
@@ -1068,9 +1084,7 @@ async function shuffleBoard(gameId) {
     ports
   };
 
-  game.markModified('state');
-  const updatedGame = await game.save();
-  // return updatedGame;
+  return game
 }
 
 // Roll dice

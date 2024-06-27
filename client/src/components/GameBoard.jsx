@@ -18,7 +18,7 @@ const App = () => {
   const referralState = useLocation().state;
   const [gameId, setGameId] = useState([]);
   const [numPlayers, setNumPlayers] = useState(4);
-  const [seats, setSeats] = useState(Array(4).fill(null));
+  // const [seats, setSeats] = useState(Array(4).fill(null));
   const [seatsObject, setSeatsObject] = useState(Array(4).fill({ username: null, socketId: null }));
   const [users, setUsers] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -107,10 +107,9 @@ const App = () => {
 
     socket.on('stateUpdated', (updatedState) => {
       console.log('State updated:', updatedState); //dev
-
-      setSeats(updatedState.seats || Array(updatedState.numSeats).fill(null));
       setSeatsObject(updatedState.seatsObject || Array(updatedState.numSeats).fill({ username: null, socketId: null }));
       setNumPlayers(updatedState.numSeats);
+
       setMessages(updatedState.messages);
       setHexes(updatedState.hexes);
       setPorts(updatedState.ports);
@@ -166,7 +165,7 @@ const App = () => {
     });
 
     socket.on('robberAuth', () => {
-      setCurrentMessage('Select Hex to Move Robber');
+      setCurrentMessage('Click on Hex to Rob');
       setRobberStep('robberSelectHex');
     });
 
@@ -326,7 +325,7 @@ const App = () => {
   const handleRobberHexClick = useCallback((hexId) => {
     if (robberStep === 'robberSelectHex') {
       setRobberHexTarget(hexId);
-      setCurrentMessage('Select Player From Whom To Steal');
+      setCurrentMessage('Click on Settlement to Rob');
       setRobberStep('robberSelectPlayer');
     }
   }, [robberStep]);
