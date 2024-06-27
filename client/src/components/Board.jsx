@@ -24,8 +24,8 @@ const Board = React.memo(({
     const vw = viewportWidth / 100;
     let boardWidth = 67 * vw;
     let boardHeight = boardWidth * 0.8;
-    if (boardHeight > 485) {
-      boardHeight = 485;
+    if (boardHeight > 450) {
+      boardHeight = 450;
       boardWidth = boardHeight / 0.80;
     }
     const hexSize = boardWidth / 6;
