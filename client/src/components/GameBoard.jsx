@@ -168,8 +168,13 @@ const App = () => {
       alert(`You received a ${devCardSelected}! Non-point development cards will appear in your inventory at the end of your turn.`);
     });
 
+    // receiving trade offer from server
     socket.on('sendOffer', (offer) => {
-      setCurrentOffer(offer);
+      // hide for offerer
+      if (offer.offerer !== username) {
+        setCurrentOffer(offer);
+        setIsTrading(true)
+      }
     });
 
     socket.on('sevenRolled', (discardAmount) => {
@@ -360,12 +365,6 @@ const App = () => {
       navigate('/dashboard');
     }
   }, [navigate]);
-
-  useEffect(() => {
-    if (currentOffer) {
-      setIsTrading(true);
-    }
-  }, [currentOffer]);
 
   const userInventory = useMemo(() => (userData ? userData.inventory : {
     wood: 0,
