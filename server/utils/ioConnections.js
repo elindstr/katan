@@ -512,6 +512,7 @@ const initializeSocket = (httpServer) => {
     // Implementing builds
     socket.on('handleBuildAction', async (gameId, type, id, isFreeBuild) => {
       console.log("handling user build action:", type, '@ index', id, "by", socket.username, "in game", gameId);
+      let buildMessage
 
       try {
         const game = await Game.findById(gameId);
@@ -519,6 +520,8 @@ const initializeSocket = (httpServer) => {
         
         // update board
         if (type === "road") {
+          buildMessage = `${socket.username} built a ${type}`
+
           game.state.roads[id] = {
             ...game.state.roads[id],
             color: player.color,
@@ -536,6 +539,8 @@ const initializeSocket = (httpServer) => {
           player.roadLength = longestRoad
         }
         if (type === "isInitialRoad") {
+          buildMessage = `${socket.username} built an initial road`
+
           // console.log(gameId, `${socket.username} built a ${type}`);
           game.state.roads[id] = {
             ...game.state.roads[id],
@@ -550,6 +555,8 @@ const initializeSocket = (httpServer) => {
         }
 
         if (type === "settlement") {
+          buildMessage = `${socket.username} built a ${type}`
+
           game.state.settlements[id] = {
             ...game.state.settlements[id],
             color: player.color,
@@ -579,6 +586,7 @@ const initializeSocket = (httpServer) => {
           
         }
         if (type === "isInitialSettlement") {
+          buildMessage = `${socket.username} built an initial settlement`
           // console.log(gameId, `${socket.username} built a ${type}`);
 
           // track second settlement status and reward resources
@@ -613,6 +621,7 @@ const initializeSocket = (httpServer) => {
 
         }
         if (type === "city") {
+          buildMessage = `${socket.username} built a ${type}`
           game.state.settlements[id] = {
             ...game.state.settlements[id],
             color: player.color,
@@ -632,7 +641,7 @@ const initializeSocket = (httpServer) => {
         game.markModified('state');
         const updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
-        await sendSystemMessage(gameId, `${socket.username} built a ${type}`);
+        await sendSystemMessage(gameId, buildMessage);
 
         // updates points
         await updatePoints(gameId)
