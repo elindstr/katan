@@ -18,7 +18,6 @@ const App = () => {
   const referralState = useLocation().state;
   const [gameId, setGameId] = useState([]);
   const [numPlayers, setNumPlayers] = useState(4);
-  // const [seats, setSeats] = useState(Array(4).fill(null));
   const [seatsObject, setSeatsObject] = useState(Array(4).fill({ username: null, socketId: null }));
   const [users, setUsers] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -41,23 +40,19 @@ const App = () => {
   const [isBuildingCity, setIsBuildingCity] = useState(false);
   const [isTrading, setIsTrading] = useState(false);
   const [isTradingWithBank, setIsTradingWithBank] = useState(false);
-  const [isHandlingSeven, setIsHandlingSeven] = useState(null);
+  const [isHandlingSeven, setIsHandlingSeven] = useState(false);
   const [currentOffer, setCurrentOffer] = useState(null);
-  const [isRollingDice, setIsRollingDice] = useState(false);
-
-  const [displayStartButton, setDisplayStartButton] = useState(false);
-  const [displayDiceButton, setDisplayDiceButton] = useState(false);
-
+   
   const [isInitialRoll, setInitialRoll] = useState(false);
   const [isInitialSettlementPlacement, setIsInitialSettlementPlacement] = useState(false);
   const [isInitialRoadPlacement, setIsInitialRoadPlacement] = useState(false);
   const [isLastBuiltSettlement, setIsLastBuiltSettlement] = useState(null);
-  const [isFreeBuild, setIsFreeBuild] = useState(true);
 
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [haveRolled, setHaveRolled] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [currentTurn, setCurrentTurn] = useState(false);
+  const [displayStartButton, setDisplayStartButton] = useState(false);
 
   const [robberStep, setRobberStep] = useState(null);
   const [robberHexTarget, setRobberHexTarget] = useState(null);
@@ -106,7 +101,7 @@ const App = () => {
     });
 
     socket.on('stateUpdated', (updatedState) => {
-      console.log('State updated:', updatedState); //dev
+      console.log('State updated:', updatedState); //dev!
       setSeatsObject(updatedState.seatsObject || Array(updatedState.numSeats).fill({ username: null, socketId: null }));
       setNumPlayers(updatedState.numSeats);
 
@@ -243,18 +238,11 @@ const App = () => {
     const socket = getSocket();
     socket.emit('handleAction', gameId, action, arg1);
 
-    if (action === 'Start Game') {
-      // setGameStarted(true); // moved to on server initial roll
-    }
-    if (action === 'End Turn') {
-      setIsMyTurn(false);
-    }
-
     if (action === 'Play Knight') {
       setKnightIsLocked(true)
     }
     if (action === 'End Turn') {
-      setKnightIsLocked(false)
+      resetTurnStates()
     }
 
     setCurrentMessage('');
@@ -262,11 +250,24 @@ const App = () => {
     setIsTrading(false);
   }, [gameId]);
 
+  function resetTurnStates(){
+    setIsMyTurn(false);
+    setKnightIsLocked(false)
+    setIsBuildingRoad(false)
+    setIsBuildingRoadOneOfTwo(false)
+    setIsBuildingRoadTwoOfTwo(false)
+    setIsBuildingSettlement(false)
+    setIsBuildingCity(false)
+    setIsTradingWithBank(false)
+    setIsTrading(false)
+  }
+
   const handleBuildAction = useCallback((type, id) => {
     const socket = getSocket();
 
     if (type === "isBuildingRoadOneOfTwo") {
       const typeMutation = "road";
+      const isFreeBuild = true
       socket.emit('handleBuildAction', gameId, typeMutation, id, isFreeBuild);
       setCurrentMessage('');
       setIsBuildingRoadOneOfTwo(false);
@@ -274,6 +275,7 @@ const App = () => {
 
     } else if (type === "isBuildingRoadTwoOfTwo") {
       const typeMutation = "road";
+      const isFreeBuild = true
       socket.emit('handleBuildAction', gameId, typeMutation, id, isFreeBuild);
       setCurrentMessage('');
       setIsBuildingRoadTwoOfTwo(false);
@@ -299,7 +301,7 @@ const App = () => {
 
       socket.emit('handleBuildAction', gameId, type, id);
     }
-  }, [gameId, isFreeBuild]);
+  }, [gameId]);
 
   const handleTradeOffer = useCallback((offer) => {
     setIsTrading(false);
@@ -480,11 +482,9 @@ const App = () => {
         <Dice
           dice={dice}
           handleDiceAction={handleAction}
-          isRollingDice={isRollingDice}
           isInitialRoll={isInitialRoll}
           haveRolled={haveRolled}
           displayStartButton={displayStartButton}
-          displayDiceButton={displayDiceButton}
           isMyTurn={isMyTurn}
           isHandlingSeven={isHandlingSeven}
           robberStep={robberStep}
