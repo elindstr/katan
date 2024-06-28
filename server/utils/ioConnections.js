@@ -90,6 +90,8 @@ const initializeSocket = (httpServer) => {
         const sockets = await io.in(gameId).fetchSockets();
         const roomUserList = sockets.map(s => s.username || 'anon');
         io.in(gameId).emit('users', roomUserList);
+        //update game s
+
       } catch (error) {
         console.error('Error joining game:', error);
         socket.emit('error', 'Error joining game');
@@ -167,7 +169,7 @@ const initializeSocket = (httpServer) => {
         // save and update
         const updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
-        sendSystemMessage(gameId, `new game started`);
+        await sendSystemMessage(gameId, `new game started`);
 
         // trigger initial roll
         io.to(gameId).emit('getInitialRoll');
@@ -310,7 +312,7 @@ const initializeSocket = (httpServer) => {
         game.markModified('state');
         const updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
-        sendSystemMessage(gameId, `${socket.username} played knight card`);
+        await sendSystemMessage(gameId, `${socket.username} played knight card`);
 
         // implement triggerRobberSteal
         socket.emit('robberAuth');
@@ -358,7 +360,13 @@ const initializeSocket = (httpServer) => {
         const updatedGame = await game.save();
         io.to(gameId).emit('stateUpdated', updatedGame.state);
 
-        await sendSystemMessage(gameId, `${socket.username} moved the robber and stole a ${stolenResource} from ${arg2}`);
+        let systemMsg
+        if (stolenResource === 'ore') {
+          displayMsg = `${socket.username} moved the robber and stole an ${stolenResource} from ${arg2}`
+        } else {
+          displayMsg = `${socket.username} moved the robber and stole a ${stolenResource} from ${arg2}`
+        }
+        await sendSystemMessage(gameId, systemMsg);
 
         // updates points (and check for largest army)
         await updatePoints(gameId)
@@ -900,7 +908,7 @@ const initializeSocket = (httpServer) => {
             await game.save();
     
             // Announce leaving
-            await sendSystemMessage(roomId, `${socket.username} left the room`);
+            await sendSystemMessage(roomId, `${socket.username} left the room`); //(doesn't work; needs heart-beat)
     
             // Leave room
             socket.leave(roomId);
@@ -991,14 +999,15 @@ const initializeSocket = (httpServer) => {
       console.log('Points updated');
     
       if (newLongestRoadPlayer) {
-        sendSystemMessage(gameId, `${newLongestRoadPlayer} acquired the longest road!`);
+        await sendSystemMessage(gameId, `${newLongestRoadPlayer} acquired the longest road!`);
       }
       if (newLargestArmyPlayer) {
-        sendSystemMessage(gameId, `${newLargestArmyPlayer} acquired the largest army!`);
+        await sendSystemMessage(gameId, `${newLargestArmyPlayer} acquired the largest army!`);
       }
     
       updatedGame.state.players.forEach(player => {
         if (player.points >= 10) {
+          //convert to stand-alone so this can be async
           sendSystemMessage(gameId, `${player.username} won!`);
           io.to(gameId).emit('endGame');
         }
