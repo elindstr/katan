@@ -56,11 +56,11 @@ function UserPanel({ currentMessage, userData, handleAction, setIsTrading, isMyT
     }
   };
 
-  const hasRoadResources = (userData.wood >= 1) && (userData.brick >= 1)
-  const hasSettlementResources = (userData.wood >= 1) && (userData.brick >= 1) && (userData.wheat >= 1) && (userData.sheep >= 1)
-  const hasCityResources = (userData.wheat >= 2) && (userData.ore >= 3)
+  const hasRoadResources = (userData.wood >= 1) && (userData.brick >= 1) && (userData.roads > 0)
+  const hasSettlementResources = (userData.wood >= 1) && (userData.brick >= 1) && (userData.wheat >= 1) && (userData.sheep >= 1) && (userData.settlements > 0)
+  const hasCityResources = (userData.wheat >= 2) && (userData.ore >= 3) && (userData.cities > 0)
   // const hasDevelopmentCardResources = true //dev
-  const hasDevelopmentCardResources = (userData.wheat >= 1) && (userData.ore >= 1) && (userData.sheep >= 1)
+  const hasDevelopmentCardResources = (userData.wheat >= 1) && (userData.ore >= 1) && (userData.sheep >= 1) 
 
   const cantAfford = {
     color: 'grey',
