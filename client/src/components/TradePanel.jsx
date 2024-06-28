@@ -1,5 +1,4 @@
-// TradePanel.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function TradePanel({ username, userData, handleTradeOffer, setIsTrading, setIsTradingWithBank, currentOffer, handleTradeResponse }) {
   const [offererGiving, setOffererGiving] = useState({
@@ -16,6 +15,7 @@ function TradePanel({ username, userData, handleTradeOffer, setIsTrading, setIsT
     wheat: 0,
     ore: 0,
   });
+  const [isValidTrade, setIsValidTrade] = useState(false);
 
   const updateGiving = (resource, amount) => {
     setOffererGiving(prev => {
@@ -43,12 +43,29 @@ function TradePanel({ username, userData, handleTradeOffer, setIsTrading, setIsT
     });
   };
 
+  const checkValidTrade = () => {
+    let givingSomething = false;
+    let receivingSomething = false;
+
+    ['wood', 'brick', 'sheep', 'wheat', 'ore'].forEach(resource => {
+      if (offererGiving[resource] > 0) givingSomething = true;
+      if (offererReceiving[resource] > 0) receivingSomething = true;
+    });
+
+    return givingSomething && receivingSomething;
+  };
+
+  useEffect(() => {
+    setIsValidTrade(checkValidTrade());
+  }, [offererGiving, offererReceiving]);
+
   const sendOffer = () => {
+    if (!isValidTrade) return;
     const offer = {
       offerer: username,
       offererGiving, 
       offererReceiving
-    }
+    };
     handleTradeOffer(offer);
   };
 
@@ -128,7 +145,7 @@ function TradePanel({ username, userData, handleTradeOffer, setIsTrading, setIsT
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -195,7 +212,7 @@ function TradePanel({ username, userData, handleTradeOffer, setIsTrading, setIsT
           </tbody>
         </table>
         <div className="trade-actions">
-          <button onClick={sendOffer}>Send Offer</button>
+          <button onClick={sendOffer} disabled={!isValidTrade}>Send Offer</button>
           <button onClick={() => setIsTradingWithBank(true)}>Trade With Bank</button>
           <button onClick={() => setIsTrading(false)}>Cancel</button>
         </div>
@@ -205,5 +222,3 @@ function TradePanel({ username, userData, handleTradeOffer, setIsTrading, setIsT
 }
 
 export default TradePanel;
-
-

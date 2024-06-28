@@ -66,7 +66,9 @@ function TradeWithBankPanel({ username, userPorts, userData, bankTrade, setIsTra
   
       console.log(`checking ${resource}. Ratio: ${ratio}. Giving Amount: ${givingAmount}. Receiving Amount: ${receivingAmount}.`);
     });
-    return totalGivingValue === totalReceivingValue;
+    return (totalGivingValue === totalReceivingValue) && 
+            (totalGivingValue>0) &&
+            (totalReceivingValue>0);
   };
 
   useEffect(() => {
