@@ -458,7 +458,7 @@ flex-direction: row;
   margin: 3px;
   font-size: .9em;
 }
-@media (max-width: 765px) {
+@media (max-width: 965px) {
   .trade-panel-container{
     display: flex;
     flex-direction: column;
@@ -469,8 +469,11 @@ flex-direction: row;
   }
   .trade-actions button {
     width: 150px;
-    padding: 3px;
-    margin: 3px;
+  }
+  .trade-actions button, .trade-panel th, .trade-panel td {
+    font-size: .9em;
+    padding: 1px;
+    margin: 3px
   }
 }
 @media (max-width: 600px) {

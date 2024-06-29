@@ -79,16 +79,16 @@ function UserPanel({ currentMessage, userData, handleAction, setIsTrading, isMyT
       <div className="development-cards">
         <h4>Development Cards</h4>
         <div>Points: {userData? userData.victoryPoint : 0}</div>
-        <div>Knights: {userData? userData.knight: 0} 
+        <div>Knights: {userData? (userData.knight + (userData.inventoryQueue?.knight || 0)) : 0} 
             {isMyTurn && userData.knight > 0 && <button onClick={() => playCard('Knight')}>Play</button>}
         </div>
-        <div>Road Building: {userData? userData.roadBuilding: 0} 
+        <div>Road Building: {userData? (userData.roadBuilding + (userData.inventoryQueue?.roadBuilding || 0)) : 0} 
             {isMyTurn && userData.roadBuilding > 0 && <button onClick={() => playCard('Road Building')}>Play</button>}
         </div>
-        <div>Year of Plenty: {userData? userData.yearOfPlenty: 0} 
+        <div>Year of Plenty: {userData? (userData.yearOfPlenty + (userData.inventoryQueue?.yearOfPlenty || 0)) : 0}
             {isMyTurn && userData.yearOfPlenty > 0 && <button onClick={() => playCard('Year of Plenty')}>Play</button>}
         </div>
-        <div>Monopoly: {userData? userData.monopoly: 0} 
+        <div>Monopoly: {userData? (userData.monopoly + (userData.inventoryQueue?.monopoly  || 0)) : 0}
             {isMyTurn && userData.monopoly > 0 && <button onClick={() => playCard('Monopoly')}>Play</button>}
         </div>
       </div>

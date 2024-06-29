@@ -279,7 +279,7 @@ const initializeSocket = (httpServer) => {
         const player = game.state.players.find(player => player.username === socket.username);
 
         if (devCardSelectedType !== 'victoryPoint') {
-          player.inventoryQueue[devCardSelectedType] += 1;
+          player.inventory.inventoryQueue[devCardSelectedType] += 1;
         } else {
           player.inventory[devCardSelectedType] += 1;
         }
@@ -429,14 +429,14 @@ const initializeSocket = (httpServer) => {
           const player = game.state.players.find(player => player.username === socket.username);
 
           // move inventory queue to inventory
-          if (player.inventoryQueue) {
-            Object.keys(player.inventoryQueue).forEach(resource => {
+          if (player.inventory.inventoryQueue) {
+            Object.keys(player.inventory.inventoryQueue).forEach(resource => {
               if (!player.inventory[resource]) {
                 player.inventory[resource] = 0;
               }
-              player.inventory[resource] += player.inventoryQueue[resource];
+              player.inventory[resource] += player.inventory.inventoryQueue[resource];
             });
-            player.inventoryQueue = {
+            player.inventory.inventoryQueue = {
               'knight': 0,
               'roadBuilding': 0,
               'yearOfPlenty': 0,
