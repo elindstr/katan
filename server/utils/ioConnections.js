@@ -362,9 +362,9 @@ const initializeSocket = (httpServer) => {
 
         let systemMsg
         if (stolenResource === 'ore') {
-          displayMsg = `${socket.username} moved the robber and stole an ${stolenResource} from ${arg2}`
+          systemMsg = `${socket.username} moved the robber and stole an ${stolenResource} from ${arg2}`
         } else {
-          displayMsg = `${socket.username} moved the robber and stole a ${stolenResource} from ${arg2}`
+          systemMsg = `${socket.username} moved the robber and stole a ${stolenResource} from ${arg2}`
         }
         await sendSystemMessage(gameId, systemMsg);
 
